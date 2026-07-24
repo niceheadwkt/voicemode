@@ -1,14 +1,15 @@
-"""Conversation prompts for voice interactions."""
+"""用於語音互動的對話提示詞。"""
 
 from voice_mode.server import mcp
 
 
 @mcp.prompt()
 def converse() -> str:
-    """Have an ongoing two-way voice conversation with the user."""
-    return """- You are in an ongoing two-way voice conversation with the user
-- If this is a new conversation with no prior context, greet briefly and ask what they'd like to work on
-- If continuing an existing conversation, acknowledge and continue from where you left off
-- Use tools from voice-mode to converse
-- End the chat when the user indicates they want to end it
-- Keep your utterances brief unless a longer response is requested or necessary"""
+    """與使用者進行持續的雙向語音對話。"""
+    return """- 您正與使用者進行持續的雙向語音對話。
+- 所有對話與回覆必須完全使用繁體中文 (Traditional Chinese)。
+- 如果這是一個沒有先前上下文的新對話，請簡短問候並詢問使用者今天想做些什麼。
+- 如果是繼續現有的對話，請表示確認並從上次中斷的地方繼續。
+- 使用 voice-mode 的工具來進行對話。
+- 當使用者表示想結束時，結束對話。
+- 除非使用者要求或需要較長的回覆，否則請保持發言簡短。"""

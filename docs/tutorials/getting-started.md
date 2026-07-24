@@ -1,68 +1,68 @@
-# Getting Started with VoiceMode
+# VoiceMode 使用入門指南 (Getting Started)
 
-VoiceMode brings voice conversations to AI coding assistants. It works as both an MCP server for Claude Code and as a standalone CLI tool.
+VoiceMode 為 AI 程式編碼助理帶來了語音對話功能。它既可作為 Claude Code 的 MCP 伺服器，也可作為獨立的命令列 (CLI) 工具使用。
 
-## What is VoiceMode?
+## 什麼是 VoiceMode？
 
-VoiceMode provides:
+VoiceMode 提供以下功能：
 
-- **MCP Server**: Adds voice tools to Claude Code - no installation needed
-- **CLI Tool**: Use VoiceMode's tools directly from your terminal
-- **Local Services**: Optional privacy-focused speech processing
+- **MCP 伺服器**：為 Claude Code 新增語音工具——無需額外安裝其他複雜設定。
+- **CLI 工具**：直接從您的終端機使用 VoiceMode 的語音工具。
+- **本地服務**：可選的、注重隱私的本地語音處理服務。
 
-## Quick Start: Using with Claude Code
+## 快速開始：在 Claude Code 中使用
 
-The fastest way to get started is using VoiceMode with Claude Code.
+與 Claude Code 搭配使用是開始體驗 VoiceMode 最快的方法。
 
-### Installation
+### 1. 安裝步驟
 
-Install UV package manager (if not already installed), then run the VoiceMode installer:
+請先安裝 UV 套件管理器（如果尚未安裝），然後執行 VoiceMode 安裝程式：
 
 ```bash
-# Install UV package manager (if not already installed)
+# 安裝 UV 套件管理器 (如果系統中還沒有)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install VoiceMode and configure services
+# 安裝 VoiceMode 並設定服務
 uvx voice-mode-install
 
-# Add to Claude Code MCP
+# 將其新增至 Claude Code 的 MCP 列表中
 claude mcp add --scope user voicemode -- uvx --refresh --from voice-mode voicemode-mcp-launcher
 ```
 
-The installer will:
+安裝程式將會自動：
 
-- Install missing system dependencies (FFmpeg, PortAudio, etc.)
-- Set up your environment for VoiceMode
-- Offer to install local voice services (Whisper STT and Kokoro TTS)
+- 安裝缺失的系統相依套件（如 FFmpeg、PortAudio 等）。
+- 為 VoiceMode 設定執行環境。
+- 提供安裝本地語音服務的選項（Whisper 語音識別與 Kokoro 語音合成）。
 
-**Alternative UV installation methods:**
-- **macOS**: `brew install uv`
-- **With pip**: `pip install uv`
+**其他的 UV 安裝方式：**
+- **macOS**：`brew install uv`
+- **使用 pip**：`pip install uv`
 
-Learn more: [UV Installation Guide](https://docs.astral.sh/uv/getting-started/installation/)
+詳情請參閱：[UV 安裝指引](https://docs.astral.sh/uv/getting-started/installation/)
 
-### 2. Configure Your API Key
+### 2. 設定您的 API 金鑰 (API Key)
 
-Set your OpenAI API key as an environment variable:
+將您的 OpenAI API 金鑰設定為環境變數（若使用雲端服務）：
 
 ```bash
-export OPENAI_API_KEY="sk-your-api-key-here"
+export OPENAI_API_KEY="您的_OpenAI_API_金鑰"
 ```
 
-Or add it to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.)
+或者將其加入到您的 Shell 設定檔中（如 `~/.bashrc`、`~/.zshrc` 等）。
 
-### 3. Verify Installation
+### 3. 驗證安裝狀態
 
 ```bash
-# Check that VoiceMode is connected
+# 檢查 VoiceMode 是否已成功連線
 claude mcp list
 ```
 
-You should see `voicemode` in the list of connected servers.
+您應該會在已連線的伺服器列表中看到 `voicemode`。
 
-### 4. Configure Permissions (Optional)
+### 4. 設定自動核准權限 (可選)
 
-By default, Claude Code prompts for permission each time VoiceMode tools are used. To enable automatic approval, add to `~/.claude/settings.json`:
+預設情況下，每次使用 VoiceMode 工具時，Claude Code 都會跳出詢問視窗要求授權。若要啟用自動核准，請將以下設定加入至您的 `~/.claude/settings.json` 中：
 
 ```json
 {
@@ -75,203 +75,215 @@ By default, Claude Code prompts for permission each time VoiceMode tools are use
 }
 ```
 
-This allows voice conversations and service management without prompts. For more permission options, see the [Permissions Guide](../guides/permissions.md).
+這能讓您在不被打擾的情況下進行語音對話與管理服務。如需了解更多權限設定，請參閱 [權限指南](../guides/permissions.md)。
 
-### 5. Start Using Voice
+### 5. 開始使用語音
 
-In Claude Code, simply type:
+在 Claude Code 中，直接輸入：
 ```
 converse
 ```
 
-Speak when you hear the chime, and Claude will respond with voice!
+聽到提示音（Chime）後即可開始說話，Claude 就會用聲音回覆您！
 
-## Alternative: Using as a CLI Tool
+---
 
-If you want to use VoiceMode from the command line:
+## 替代方案：作為獨立 CLI 工具使用
 
-### Installation
+如果您想直接在命令列中使用 VoiceMode：
+
+### 安裝步驟
 
 ```bash
-# Install with pip
+# 使用 pip 安裝
 uv tool install voice-mode
 
-# Or install from source in editable mode
+# 或者從原始碼以可編輯模式進行安裝
 git clone https://github.com/mbailey/voicemode
 cd voicemode
 uv tool install -e .
 ```
 
-### Basic Usage
+### 基本用法
 
 ```bash
-# Set your API key
-export OPENAI_API_KEY="sk-your-api-key-here"
+# 設定您的 API 金鑰
+export OPENAI_API_KEY="您的_OpenAI_API_金鑰"
 
-# Start a voice conversation
+# 啟動語音對話
 voicemode converse
 ```
 
-## Setting Up Local Services (Optional)
+---
 
-For complete privacy, you can run voice services locally instead of using OpenAI.
+## 建立本地語音服務 (可選)
 
-### Quick Setup
+為了維護個人隱私，您可以選擇在本地端運行語音服務，而非將語音傳送至 OpenAI 雲端。
+
+### 快速設定步驟
 
 ```bash
-# Install local services
-voicemode service install whisper   # Speech-to-text
-voicemode service install kokoro    # Text-to-speech
+# 安裝本地語音服務
+voicemode service install whisper   # 語音轉文字 (STT)
+voicemode service install kokoro    # 文字轉語音 (TTS)
 
-# Start services
+# 啟動本地服務
 voicemode service start whisper
 voicemode service start kokoro
 
-# Check status of all services
+# 檢查所有服務的運行狀態
 voicemode service status
 ```
 
-VoiceMode will automatically detect and use these local services when available.
+當本地服務可用時，VoiceMode 會自動偵測並優先使用它們。
 
-### Enable Auto-Start (Recommended)
+### 啟用開機/登入自動啟動 (推薦)
 
-To have services start automatically at login:
+若要讓這些語音服務在您登入系統時自動在背景啟動：
 
 ```bash
-# Enable services to start at boot/login
+# 啟用自動啟動
 voicemode service enable whisper
 voicemode service enable kokoro
 ```
 
-On macOS, this creates launchd agents. On Linux, it creates systemd user services.
+在 macOS 上，這會建立 launchd 守護行程；在 Linux 上，則會建立 systemd 使用者服務。
 
-### Download Sizes and Requirements
+### 檔案下載大小與系統需求
 
-| Service | Download Size | Disk Space | First Start Time |
+| 服務 | 下載大小 | 佔用硬碟空間 | 首次啟動耗時 |
 |---------|---------------|------------|------------------|
-| Whisper (tiny) | ~75MB | ~150MB | 30 seconds |
-| Whisper (base) | ~150MB | ~300MB | 1-2 minutes |
-| Whisper (small) | ~460MB | ~1GB | 2-3 minutes |
-| Kokoro TTS | ~350MB | ~700MB | 2-3 minutes |
+| Whisper (tiny) | ~75MB | ~150MB | 30 秒 |
+| Whisper (base) | ~150MB | ~300MB | 1-2 分鐘 |
+| Whisper (small) | ~460MB | ~1GB | 2-3 分鐘 |
+| Kokoro TTS | ~350MB | ~700MB | 2-3 分鐘 |
 
-**Recommended**: Whisper base + Kokoro = ~500MB download, ~1GB disk space.
+**推薦配置**：Whisper base + Kokoro = 共需下載約 500MB，硬碟佔用約 1GB。
 
-### Waiting for Services
+### 等待服務啟動
 
-After installation, services download models on first start. Wait for them to be ready:
+安裝後，服務在首次啟動時需要下載模型。請耐心等待它們準備就緒：
 
 ```bash
-# Wait for Whisper (port 2022)
+# 等待 Whisper 服務就緒 (連接埠 2022)
 while ! nc -z localhost 2022 2>/dev/null; do sleep 2; done
-echo "Whisper ready"
+echo "Whisper 已就緒"
 
-# Wait for Kokoro (port 8880)
+# 等待 Kokoro 服務就緒 (連接埠 8880)
 while ! nc -z localhost 8880 2>/dev/null; do sleep 2; done
-echo "Kokoro ready"
+echo "Kokoro 已就緒"
 ```
 
-Learn more: [Whisper Setup Guide](../guides/whisper-setup.md) | [Kokoro Setup Guide](../guides/kokoro-setup.md)
+詳細說明請參閱：[Whisper 安裝指南](../guides/whisper-setup.md) | [Kokoro 安裝指南](../guides/kokoro-setup.md)
 
-## Configuration
+---
 
-VoiceMode works out of the box with sensible defaults. To customize:
+## 自訂設定 (Configuration)
 
-### Select Your Voice
+VoiceMode 隨附了合理的預設值。若要自訂偏好：
+
+### 選擇語音聲音 (Voice)
 
 ```bash
-# OpenAI voices
+# OpenAI 提供的語音
 export VOICEMODE_VOICES="nova,shimmer"
 
-# Or Kokoro voices (if using local TTS)
+# 或者使用 Kokoro 本地語音 (若使用本地 TTS)
 export VOICEMODE_VOICES="af_sky,am_adam"
 ```
 
-Available OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+可用的 OpenAI 語音：alloy, echo, fable, onyx, nova, shimmer
 
-### Project-Specific Settings
+### 專案級特定設定
 
-Create `.voicemode.env` in your project:
+在您的專案根目錄下建立 `.voicemode.env`：
 
 ```bash
 export VOICEMODE_VOICES="af_nova,nova"
 export VOICEMODE_TTS_SPEED=1.2
 ```
 
-Learn more: [Configuration Guide](../guides/configuration.md)
+詳細說明請參閱：[設定指南](../guides/configuration.md)
 
-## Troubleshooting
+---
 
-### Voice Not Working in Claude?
+## 疑難排解 (Troubleshooting)
 
-1. **Check MCP connection**:
+### 語音在 Claude 中無法正常運作？
+
+1. **檢查 MCP 連線狀態**：
    ```bash
    claude mcp list
    ```
    
-2. **Verify OPENAI_API_KEY** is set in your MCP configuration
+2. **驗證您的 MCP 設定檔中是否正確設定了 `OPENAI_API_KEY`**。
 
-3. Add to your MCP config:
+3. 手動新增環境變數至您的 MCP 設定檔中：
    ```json
    "env": {
      "OPENAI_API_KEY": "sk-...",
    }
    ```
 
-### No Audio Input?
+### 麥克風沒有聲音輸入？
 
 ```bash
-# List audio devices
+# 列出系統的音訊裝置
 voicemode diag devices
 
-# Test TTS and STT
+# 測試 TTS 與 STT 功能
 voicemode converse
 ```
 
-### Service Issues?
+### 本地服務連線問題？
 
 ```bash
-# Check service status
-voicemode service status           # All services
-voicemode service status whisper   # Specific service
+# 檢查服務狀態
+voicemode service status           # 所有服務
+voicemode service status whisper   # 特定服務
 
-# View logs
+# 檢視運行日誌
 voicemode service logs whisper -n 50
 voicemode service logs kokoro -n 50
 
-# Check if service is responding
+# 檢查服務是否有回應（健康度檢查）
 voicemode service health whisper
 voicemode service health kokoro
 ```
 
-## Running VoiceMode as a Service (Advanced)
+---
 
-For remote access or persistent operation, run VoiceMode as a background service:
+## 以背景服務方式執行 VoiceMode (進階)
+
+若要進行遠端存取或持續運行，您可以將 VoiceMode 作為背景服務啟動：
 
 ```bash
-# Start the VoiceMode HTTP server
+# 啟動 VoiceMode HTTP 伺服器
 voicemode service start voicemode
 
-# Enable auto-start at boot/login
+# 啟用開機/登入時自動啟動
 voicemode service enable voicemode
 
-# Check all services
+# 檢查所有服務狀態
 voicemode service status
 ```
 
-The HTTP server enables remote access from other machines on your network or via secure tunnels.
+啟動 HTTP 伺服器後，您便可從區域網路中的其他裝置或透過安全隧道 (Tunnel) 進行遠端存取。
 
-For security best practices when running remotely, see the [Configuration Guide](../guides/configuration.md#http-server-security).
+當需要將服務開放至遠端存取時，請務必參閱 [設定指南中的安全建議](../guides/configuration.md#http-server-security)。
 
-## Next Steps
+---
 
-- **[Configuration Guide](../guides/configuration.md)** - Customize VoiceMode
-- **[Development Setup](development-setup.md)** - Contribute to VoiceMode
-- **[Service Guides](../guides/)** - Set up Whisper, Kokoro, or LiveKit
-- **[CLI Reference](../reference/cli.md)** - All available commands
+## 下一步引言
 
-## Getting Help
+- **[設定自訂指南](../guides/configuration.md)** - 調整您的 VoiceMode 參數
+- **[開發人員設定](development-setup.md)** - 參與 VoiceMode 的開源貢獻
+- **[語音服務指南](../guides/)** - 設定本地 Whisper、Kokoro 或 LiveKit 服務
+- **[CLI 指令參考](../reference/cli.md)** - 查詢所有可用的命令
 
-- **GitHub Issues**: [github.com/mbailey/voicemode/issues](https://github.com/mbailey/voicemode/issues)
-- **Discord**: Join our community for support
+## 尋求協助
 
-Welcome to voice-enabled AI coding! 🎙️
+- **GitHub 錯誤回報**：[github.com/mbailey/voicemode/issues](https://github.com/mbailey/voicemode/issues)
+- **Discord**：加入我們的社群取得即時技術支援
+
+歡迎來到語音啟動的 AI 程式開發新時代！ 🎙️

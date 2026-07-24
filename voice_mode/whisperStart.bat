@@ -1,0 +1,1 @@
+C:\aiTest\voicemode\voice_mode\tools\whisper\whisper-cli.exe -m ggml-base.bin --port 2022 --host 127.0.0.1 

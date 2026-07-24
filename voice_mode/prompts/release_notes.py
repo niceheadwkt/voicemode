@@ -1,11 +1,11 @@
-"""Release notes prompt for displaying recent CHANGELOG entries."""
+"""版本說明提示詞，用於顯示最近的 CHANGELOG 項目。"""
 
 from voice_mode.server import mcp
 
 
 @mcp.prompt(name="release-notes")
 def release_notes_prompt(versions: str = "5") -> str:
-    """View recent release notes from Voice Mode's CHANGELOG."""
+    """查看 Voice Mode 的 CHANGELOG 中的最近版本說明。"""
     # Lazy import to break a circular import:
     #
     #   voice_mode/resources/changelog.py

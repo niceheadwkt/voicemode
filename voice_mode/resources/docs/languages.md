@@ -1,135 +1,89 @@
-# Non-English Language Support
+# 非英語語言支援
 
-## Overview
+## 概述
 
-When speaking non-English languages, you **must** specify both `voice` and `tts_provider` for proper pronunciation. Default OpenAI voices speak non-English with an American accent.
+在說非英語語言時，您**必須**為適當的發音指定 `voice` 與 `tts_provider`。預設的 OpenAI 語音在說非英語時會帶有美式口音。
 
-## Recommended Kokoro Voices
+## 推薦的 Kokoro 中文語音
 
-### Spanish
+### 中文 (繁體/國語)
 ```python
-converse("¿Cómo estás?", voice="ef_dora", tts_provider="kokoro")
+converse("您好，今天想做些什麼？", voice="zf_xiaobei", tts_provider="kokoro")
 ```
 
-### French
-```python
-converse("Bonjour!", voice="ff_siwis", tts_provider="kokoro")
-```
+## 可用的 Kokoro 語音列表（按語言劃分）
 
-### Italian
-```python
-converse("Ciao!", voice="if_sara", tts_provider="kokoro")
-```
+### 中文 (國語/普通話)
+- `zf_xiaobei` - 女聲 (推薦)
+- `zm_xiaoming` - 男聲
 
-### Chinese
-```python
-converse("你好", voice="zf_xiaobei", tts_provider="kokoro")
-```
+### 英語 (美式)
+- `af_sky` - 女聲
+- `af_sarah` - 女聲
+- `am_adam` - 男聲
+- `am_michael` - 男聲
 
-### Japanese
-```python
-converse("こんにちは", voice="jf_alpha", tts_provider="kokoro")
-```
+### 西班牙語
+- `ef_dora` - 女聲
+- `em_marco` - 男聲
 
-## Available Kokoro Voices by Language
+### 法語
+- `ff_siwis` - 女聲
+- `fm_jean` - 男聲
 
-### English
-- `af_sky` - Female
-- `af_sarah` - Female
-- `am_adam` - Male
-- `am_michael` - Male
+### 義大利語
+- `if_sara` - 女聲
+- `im_marco` - 男聲
 
-### Spanish
-- `ef_dora` - Female
-- `em_marco` - Male
+### 日語
+- `jf_alpha` - 女聲
+- `jm_beta` - 男聲
 
-### French
-- `ff_siwis` - Female
-- `fm_jean` - Male
+### 德語
+- `gf_lisa` - 女聲
+- `gm_hans` - 男聲
 
-### Italian
-- `if_sara` - Female
-- `im_marco` - Male
+### 葡萄牙語 (巴西)
+- `bf_maria` - 女聲
+- `bm_joao` - 男聲
 
-### Chinese (Mandarin)
-- `zf_xiaobei` - Female
-- `zm_xiaoming` - Male
+### 俄語
+- `rf_natasha` - 女聲
+- `rm_dmitri` - 男聲
 
-### Japanese
-- `jf_alpha` - Female
-- `jm_beta` - Male
+### 韓語
+- `kf_yuna` - 女聲
+- `km_junho` - 男聲
 
-### German
-- `gf_lisa` - Female
-- `gm_hans` - Male
+### 印地語
+- `hf_priya` - 女聲
+- `hm_raj` - 男聲
 
-### Portuguese (Brazilian)
-- `bf_maria` - Female
-- `bm_joao` - Male
+### 阿拉伯語
+- `af_layla` - 女聲
+- `am_omar` - 男聲
 
-### Russian
-- `rf_natasha` - Female
-- `rm_dmitri` - Male
+### 土耳其語
+- `tf_ayse` - 女聲
+- `tm_mehmet` - 男聲
 
-### Korean
-- `kf_yuna` - Female
-- `km_junho` - Male
+## 語音命名慣例
 
-### Hindi
-- `hf_priya` - Female
-- `hm_raj` - Male
+Kokoro 語音遵循以下模式：`{language}{gender}_{name}`
 
-### Arabic
-- `af_layla` - Female
-- `am_omar` - Male
-
-### Turkish
-- `tf_ayse` - Female
-- `tm_mehmet` - Male
-
-## Voice Naming Convention
-
-Kokoro voices follow the pattern: `{language}{gender}_{name}`
-
-- **Language code:** First letter(s) of language
-  - `a` = English (American)
-  - `e` = Spanish (Español)
-  - `f` = French (Français)
-  - `i` = Italian
-  - `z` = Chinese (中文)
-  - `j` = Japanese
-  - `g` = German
-  - `b` = Brazilian Portuguese
-  - `r` = Russian
-  - `k` = Korean
-  - `h` = Hindi
-  - `t` = Turkish
-
-- **Gender:**
-  - `f` = Female
-  - `m` = Male
-
-- **Name:** Given name in that language
-
-## OpenAI Voices (English-centric)
-
-OpenAI voices work for any language but maintain American English accent:
-- `nova` - Female
-- `shimmer` - Female
-- `alloy` - Neutral
-- `echo` - Male
-- `fable` - Male
-- `onyx` - Male
-
-**Not recommended for non-English** - use Kokoro instead.
-
-## Important Notes
-
-1. **Always specify both `voice` and `tts_provider`** when using non-English
-2. **Never use `coral` voice** - it's not supported
-3. Kokoro provides native pronunciation for each language
-4. STT (speech-to-text) auto-detects language by default. Set `VOICEMODE_WHISPER_LANGUAGE` to a specific language code (e.g., `it` for Italian) for better accuracy with non-English audio
-
-## See Also
-- `voicemode-parameters` - Full parameter reference
-- `voicemode-quickstart` - Basic usage examples
+- **語言代碼：** 語言的第一個字母
+  - `a` = 英語 (American)
+  - `e` = 西班牙語 (Español)
+  - `f` = 法語 (Français)
+  - `i` = 義大利語
+  - `z` = 中文 (中文)
+  - `j` = 日語
+  - `g` = 德語
+  - `b` = 葡萄牙語 (Brazilian)
+  - `r` = 俄語
+  - `k` = 韓語
+  - `h` = 印地語
+  - `t` = 土耳其語
+- **性別代碼：**
+  - `f` = 女性 (Female)
+  - `m` = 男性 (Male)

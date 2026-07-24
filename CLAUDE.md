@@ -1,199 +1,199 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件為 Claude Code (claude.ai/code) 在此專案庫中工作時的指導方針。
 
-## Voice Interaction
+## 語音互動
 
-Load the voicemode skill for voice conversation support: `/voicemode:voicemode`
+載入 `voicemode` 技術技能以支援語音對話：`/voicemode:voicemode`
 
-## Project Overview
+## 專案概述
 
-VoiceMode is a Python package that provides voice interaction capabilities for AI assistants through the Model Context Protocol (MCP). It enables natural voice conversations with Claude Code and other AI coding assistants by integrating speech-to-text (STT) and text-to-speech (TTS) services.
+VoiceMode 是一個 Python 套件，透過模型上下文協定 (Model Context Protocol, MCP) 為 AI 助理提供語音互動功能。它整合了語音轉文字 (STT) 與文字轉語音 (TTS) 服務，讓 Claude Code 和其他 AI 程式編碼助理能夠進行自然的語音對話。
 
-## Key Commands
+## 常用指令
 
-### Development & Testing
+### 開發與測試
 ```bash
-# Install in development mode with dependencies
+# 以開發模式安裝並安裝所有相依套件
 make dev-install
 
-# Run all unit tests
+# 執行所有單元測試
 make test
-# Or directly: uv run pytest tests/ -v --tb=short
+# 或直接執行：uv run pytest tests/ -v --tb=short
 
-# Run specific test
+# 執行特定測試
 uv run pytest tests/test_voice_mode.py -v
 
-# Clean build artifacts
+# 清理建置產物
 make clean
 ```
 
-### Building & Publishing
+### 建置與發佈
 ```bash
-# Build Python package
+# 建置 Python 套件
 make build-package
 
-# Build development version (auto-versioned)
+# 建置開發版本（自動設定版本號）
 make build-dev  
 
-# Test package installation
+# 測試套件安裝
 make test-package
 
-# Release workflow (bumps version, tags, pushes) — see "Releases & Changelog" below before running
+# 發佈工作流（遞增版本號、建立標籤、推送到遠端）——執行前請參閱下方的「版本發佈與變更日誌」
 make release
 ```
 
-### Documentation
+### 說明文件
 ```bash
-# Serve docs locally at http://localhost:8000
+# 於本地啟動說明文件伺服器：http://localhost:8000
 make docs-serve
 
-# Build documentation site
+# 建置說明文件網站
 make docs-build
 
-# Check docs for errors (strict mode)
+# 檢查說明文件錯誤（嚴格模式）
 make docs-check
 ```
 
-## Releases & Changelog
+## 版本發佈與變更日誌 (Releases & Changelog)
 
-**The changelog is the release notes.** Keep it accurate continuously — it is not written at release time.
+**變更日誌 (Changelog) 即為版本發佈說明。** 請隨時保持其準確性——它不是在發佈時才撰寫的。
 
-### Versioning
+### 版本命名規範 (Versioning)
 
-- Semantic Versioning, `X.Y.Z`. New backward-compatible features → minor bump (e.g. `8.6.1` → `8.7.0`); fixes only → patch.
-- **Source of truth: `voice_mode/__version__.py`** — auto-updated by the release script. **Never edit it by hand** (it says so itself). `pyproject.toml` reads it via `[tool.hatch.version]`.
-- The release script also bumps `server.json`, `installer/pyproject.toml`, and `.claude-plugin/plugin.json` (the plugin gets a `p0` suffix, e.g. `8.7.0p0`). Don't bump these manually either.
+- 採用語意化版本 (Semantic Versioning)，格式為 `X.Y.Z`。新增回溯相容的新功能 → 遞增次要版本（例如 `8.6.1` → `8.7.0`）；僅修復 Bug → 遞增修訂版本。
+- **版本號的唯一事實來源為：`voice_mode/__version__.py`** ——此檔案由發佈指令腳本自動更新。**切勿手動編輯它**（檔案內有註明）。`pyproject.toml` 會透過 `[tool.hatch.version]` 讀取此檔案。
+- 發佈腳本還會自動更新 `server.json`、`installer/pyproject.toml` 以及 `.claude-plugin/plugin.json`（插件會加上 `p0` 後綴，例如 `8.7.0p0`）。請勿手動修改這些檔案。
 
-### The CHANGELOG is continuously maintained
+### 變更日誌 (CHANGELOG) 需持續維護
 
-- Format: [Keep a Changelog](https://keepachangelog.com/) — a `## [Unreleased]` section at the top with `### Added / Changed / Deprecated / Removed / Fixed` (this project also uses a `### Migration` subsection).
-- **As PRs land, their user-facing changes go into `## [Unreleased]`** — not deferred to release day. Reference task IDs (`VM-xxxx`) and PR links, matching the existing entry style.
-- Write entries as **release notes for users**: GitHub Actions extracts the version's changelog section verbatim into the GitHub Release (see below), so it must read well standalone and showcase new functionality.
-- The `/changelog` skill (`claude-code-tools:changelog`) can help draft entries, but headline/showcase wording is human-curated because it ships to users.
+- 格式規範：[Keep a Changelog](https://keepachangelog.com/) —— 在最上方保留一個 `## [Unreleased]` 區段，並分類為 `### Added / Changed / Deprecated / Removed / Fixed`（本專案還包含一個 `### Migration` 子區段）。
+- **當 PR 合併時，其面向使用者的變更必須直接寫入 `## [Unreleased]`** ——不要推遲到發佈當天。請參考現有條目的風格，附上任務 ID (`VM-xxxx`) 與 PR 連結。
+- 條目內容應寫成**給使用者看的發佈說明**：GitHub Actions 會將該版本的變更日誌內容逐字擷取並發佈為 GitHub Release 的內容，因此它必須具備良好的可讀性並突出新功能。
+- 您可以使用 `/changelog` 技術技能 (`claude-code-tools:changelog`) 來協助起草條目，但標題與宣傳字句仍需人工精修，因為這會直接發送給使用者。
 
-### Cutting a release — `make release`
+### 執行發佈 —— `make release`
 
 ```bash
-make release        # prompts for the new version, then runs scripts/release.py X.Y.Z
+make release        # 系統會提示輸入新版本號，然後執行 scripts/release.py X.Y.Z
 ```
 
-`scripts/release.py X.Y.Z` does **all of this automatically** — do NOT do these by hand:
+`scripts/release.py X.Y.Z` 將會**自動執行以下所有步驟** —— 請勿手動操作：
 
-1. Bumps the version in all four files above.
-2. **Rewrites the CHANGELOG header**: turns `## [Unreleased]` into `## [Unreleased]` (fresh empty) + `## [X.Y.Z] - YYYY-MM-DD` below it. **So never manually cut the version header or add the date — that is the release script's job.** Your only changelog responsibility before a release is making sure the *Unreleased* section is complete and accurate.
-3. `git commit -m "chore: bump version to X.Y.Z for all packages"`.
-4. Creates annotated tag `vX.Y.Z`.
-5. `git push origin` (the **current branch**) + pushes the tag.
+1. 更新上述四個檔案中的版本號。
+2. **重寫 CHANGELOG 標頭**：將 `## [Unreleased]` 轉換為新的空白 `## [Unreleased]`，並在下方建立 `## [X.Y.Z] - YYYY-MM-DD` 區段。**因此，切勿手動切割版本標頭或加入日期——這是發佈腳本的工作。** 您在發佈前的唯一職責是確保 *Unreleased* 區段的內容完整且正確。
+3. 執行 `git commit -m "chore: bump version to X.Y.Z for all packages"`。
+4. 建立附註標籤 (Annotated Tag) `vX.Y.Z`。
+5. 執行 `git push origin`（推送**當前分支**）並推送標籤。
 
-Useful flags (pass via `scripts/release.py` directly): `--current` (print version), `--no-commit` (update files only), `--no-push` (commit + tag, no push), `--package package|installer`.
+常用參數（可直接傳遞給 `scripts/release.py`）：`--current`（顯示目前版本）、`--no-commit`（僅更新檔案不送交）、`--no-push`（提交並建立標籤但不推送）、`--package package|installer`。
 
-### What the tag triggers
+### 標籤觸發的後續動作
 
-Pushing a `v*` tag fires two GitHub Actions workflows:
+推送 `v*` 標籤會觸發兩個 GitHub Actions 工作流：
 
-- **`create-release.yml`** — `awk`-extracts the `## [X.Y.Z] - DATE` section from CHANGELOG.md and publishes it as the GitHub Release body. **The header must be exactly `## [X.Y.Z] - DATE`** or extraction yields empty notes — another reason to let `release.py` write it.
-- **`publish-pypi-and-mcp.yml`** — builds and publishes packages to PyPI and the MCP registry.
+- **`create-release.yml`** —— 透過 `awk` 擷取 CHANGELOG.md 中的 `## [X.Y.Z] - DATE` 區段，並將其發佈為 GitHub Release 的主體內容。**標頭必須完全符合 `## [X.Y.Z] - DATE` 格式**，否則擷取會產生空白說明——這也是交給 `release.py` 寫入的另一個原因。
+- **`publish-pypi-and-mcp.yml`** —— 建置並將套件發佈至 PyPI 和 MCP 登錄庫。
 
-Monitor: https://github.com/mbailey/voicemode/actions
+監控網址：https://github.com/mbailey/voicemode/actions
 
-### Pre-release checklist (do this before `make release`)
+### 發佈前檢查清單 (Pre-release checklist)
 
-1. **Be on `master` and `git pull` first.** Mike merges PRs locally (`--no-ff`) and pushes master; `release.py` pushes whatever branch you're on, so the tag must be cut from an up-to-date `master` or merged work is silently excluded.
-2. Verify `## [Unreleased]` is complete — every merged user-facing PR represented, headline features showcased. Cross-check against `git log <last-tag>..origin/master`.
-3. Decide the version bump per SemVer.
-4. `make release`, then watch the Actions run.
+1. **確保切換至 `master` 分支並先執行 `git pull`。** Mike 會在本地合併 PR (`--no-ff`) 並推送至 master；`release.py` 會推送您當前所在的分支，因此必須從最新的 `master` 建立標籤，否則已合併的工作會被默默排除。
+2. 驗證 `## [Unreleased]` 內容完整 —— 每個已合併且面向使用者的 PR 都有記錄，核心功能都有展示。可與 `git log <last-tag>..origin/master` 進行對照。
+3. 根據語意化版本規範決定版本號如何遞增。
+4. 執行 `make release`，然後觀察 Actions 的執行狀態。
 
-## Architecture Overview
+## 架構概述
 
-### Core Components
+### 核心組件
 
-1. **MCP Server (`voice_mode/server.py`)**
-   - FastMCP-based server providing voice tools via stdio transport
-   - Auto-imports all tools, prompts, and resources
-   - Handles FFmpeg availability checks and logging setup
+1. **MCP 伺服器 (`voice_mode/server.py`)**
+   - 基於 FastMCP 的伺服器，透過 stdio 傳輸協定提供語音工具。
+   - 自動匯入所有工具 (tools)、提示詞 (prompts) 與資源 (resources)。
+   - 負責 FFmpeg 可用性檢查與日誌設定。
 
-2. **Tool System (`voice_mode/tools/`)**
-   - **converse.py**: Primary voice conversation tool with TTS/STT integration
-   - **service.py**: Unified service management for Whisper/Kokoro
-   - **providers.py**: Provider discovery and registry management
-   - **devices.py**: Audio device detection and management
-   - Services subdirectory contains install/uninstall tools for Whisper and Kokoro
-   - See [Tool Loading Architecture](docs/reference/tool-loading-architecture.md) for internal details
+2. **工具系統 (`voice_mode/tools/`)**
+   - **converse.py**：核心語音對話工具，整合 TTS/STT。
+   - **service.py**：整合 Whisper/Kokoro 的服務管理工具。
+   - **providers.py**：提供者探索與註冊管理。
+   - **devices.py**：音訊裝置偵測與管理。
+   - 服務子目錄包含用於安裝/解除安裝 Whisper 與 Kokoro 的工具。
+   - 詳細的內部設計請參閱 [工具載入架構說明](docs/reference/tool-loading-architecture.md)。
 
-3. **Provider System (`voice_mode/providers.py`)**
-   - Dynamic discovery of OpenAI-compatible TTS/STT endpoints
-   - Health checking and failover support
-   - Maintains registry of available voice services
+3. **提供者系統 (`voice_mode/providers.py`)**
+   - 動態探索與 OpenAI 相容的 TTS/STT 端點。
+   - 支援健康檢查與故障轉移 (failover)。
+   - 維護可用語音服務的註冊表。
 
-4. **Configuration (`voice_mode/config.py`)**
-   - Environment-based configuration with sensible defaults
-   - Support for voice preference files (project/user level)
-   - Audio format configuration (PCM, MP3, WAV, FLAC, AAC, Opus)
+4. **設定模組 (`voice_mode/config.py`)**
+   - 基於環境變數的設定系統，附帶合理的預設值。
+   - 支援專案級與使用者級的語音偏好設定檔。
+   - 音訊格式設定（支援 PCM、MP3、WAV、FLAC、AAC、Opus）。
 
-5. **Resources (`voice_mode/resources/`)**
-   - MCP resources exposed for client access
-   - Statistics, configuration, changelog, and version information
-   - Whisper model management
+5. **資源系統 (`voice_mode/resources/`)**
+   - 開放給用戶端存取的 MCP 資源。
+   - 包含統計資訊、配置設定、變更日誌與版本資訊。
+   - Whisper 模型管理。
 
-### Service Architecture
+### 服務架構
 
-The project supports multiple voice service backends:
-- **OpenAI API**: Cloud-based TTS/STT (requires API key)
-- **Whisper.cpp**: Local speech-to-text service
-- **Kokoro**: Local text-to-speech with multiple voices
+本專案支援多種語音服務後端：
+- **OpenAI API**：雲端 TTS/STT（需要 API 金鑰）。
+- **Whisper.cpp**：本地語音轉文字服務。
+- **Kokoro**：本機文字轉語音服務，擁有多種語音。
 
-Services can be installed and managed through MCP tools, with automatic service discovery and health checking.
+服務可以透過 MCP 工具進行安裝與管理，並支援自動服務探索與健康檢查。
 
-### Key Design Patterns
+### 核心設計模式
 
-1. **OpenAI API Compatibility**: All voice services expose OpenAI-compatible endpoints, enabling transparent switching between providers
-2. **Dynamic Tool Discovery**: Tools are auto-imported from the tools directory structure
-3. **Failover Support**: Automatic fallback between services based on availability
-4. **Local Microphone Transport**: Direct audio capture via PyAudio for voice interactions
-5. **Audio Format Negotiation**: Automatic format validation against provider capabilities
+1. **OpenAI API 相容性**：所有語音服務皆提供與 OpenAI 相容的端點，便於在不同提供者之間進行無縫切換。
+2. **動態工具探索**：工具會從 tools 目錄結構中自動匯入。
+3. **故障轉移支援**：根據可用性在不同服務之間自動進行 fallback 切換。
+4. **本地麥克風傳輸**：透過 PyAudio 直接擷取音訊以進行語音互動。
+5. **音訊格式協議**：針對提供者的支援能力自動驗證音訊格式。
 
-## Development Notes
+## 開發備忘錄
 
-- The project uses `uv` for package management (not pip directly)
-- Python 3.10+ is required
-- FFmpeg is required for audio processing
-- The project follows a modular architecture with FastMCP patterns
-- Service installation tools handle platform-specific setup (launchd on macOS, systemd on Linux)
-- Event logging and conversation logging are available for debugging
-- WebRTC VAD is used for silence detection when available
+- 本專案使用 `uv` 進行套件管理（而非直接使用 pip）。
+- 需使用 Python 3.10+ 版本。
+- 音訊處理需安裝 FFmpeg。
+- 專案遵循基於 FastMCP 模式的模組化架構。
+- 服務安裝工具會處理平台特定的設定（在 macOS 上為 launchd，在 Linux 上為 systemd）。
+- 提供事件日誌與對話日誌以供偵錯使用。
+- 在支援的環境下，會使用 WebRTC VAD 進行靜音偵測。
 
-## Testing
+## 測試
 
-- Unit tests: `tests/` - run with `make test`
-- Manual tests: `tests/manual/` - require user interaction
+- 單元測試：位於 `tests/` —— 執行 `make test`。
+- 手動測試：位於 `tests/manual/` —— 需要使用者互動。
 
-## Logging
+## 日誌紀錄
 
-Logs are stored in `~/.voicemode/`:
-- `logs/conversations/` - Voice exchange history (JSONL)
-- `logs/events/` - Operational events and errors
-- `audio/` - Saved TTS/STT audio files
-- `voicemode.env` - User configuration
+日誌檔案儲存於 `~/.voicemode/` 目錄中：
+- `logs/conversations/` —— 語音交談歷史紀錄 (JSONL)
+- `logs/events/` —— 運行事件與錯誤紀錄
+- `audio/` —— 儲存的 TTS/STT 音訊檔案
+- `voicemode.env` —— 使用者設定檔
 
-## VoiceMode Suite
+## VoiceMode 完整套件
 
-This is the core Python package. VoiceMode is a suite of related projects:
+這是核心 Python 套件。VoiceMode 是一系列相關專案的組合：
 
-**For a complete overview of all VoiceMode components**, read:
-- **[voicemode-meta/COMPONENTS.md](../voicemode-meta/COMPONENTS.md)** - Full suite documentation
+**若要取得所有 VoiceMode 組件的完整概述，請參閱：**
+- **[voicemode-meta/COMPONENTS.md](../voicemode-meta/COMPONENTS.md)** —— 完整套件說明文件
 
-Quick reference:
-- **voicemode** (this repo) - Python MCP server for local voice mode
-- **voicemode-dev** - Cloudflare Workers backend for voicemode.dev
-- **voicemode-ios** - Native iOS app
-- **voicemode-macos** - Native macOS app
-- **voicemode-meta** - Project coordination and operations
+快速參考：
+- **voicemode**（本專案庫）—— 用於本地語音模式的 Python MCP 伺服器。
+- **voicemode-dev** —— 用於 voicemode.dev 的 Cloudflare Workers 後端。
+- **voicemode-ios** —— 原生 iOS 應用程式。
+- **voicemode-macos** —— 原生 macOS 應用程式。
+- **voicemode-meta** —— 專案協調與營運管理。
 
-## See Also
+## 延伸閱讀
 
-- **[skills/voicemode/SKILL.md](skills/voicemode/SKILL.md)** - Voice interaction usage and MCP tools
-- **[skills/voicemode-connect/SKILL.md](skills/voicemode-connect/SKILL.md)** - Remote voice via mobile/web clients
-- **[docs/tutorials/getting-started.md](docs/tutorials/getting-started.md)** - Installation guide
-- **[docs/guides/configuration.md](docs/guides/configuration.md)** - Configuration reference
-- **[docs/concepts/architecture.md](docs/concepts/architecture.md)** - Detailed architecture
+- **[skills/voicemode/SKILL.md](skills/voicemode/SKILL.md)** —— 語音互動使用說明與 MCP 工具。
+- **[skills/voicemode-connect/SKILL.md](skills/voicemode-connect/SKILL.md)** —— 透過行動/網頁用戶端進行遠端語音連線。
+- **[docs/tutorials/getting-started.md](docs/tutorials/getting-started.md)** —— 安裝設定指南。
+- **[docs/guides/configuration.md](docs/guides/configuration.md)** —— 設定規格參考。
+- **[docs/concepts/architecture.md](docs/concepts/architecture.md)** —— 詳細架構設計。

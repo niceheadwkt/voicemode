@@ -1,52 +1,52 @@
-# Voicemode Quickstart
+# VoiceMode 快速入門
 
-## Basic Usage
+## 基本用法
 
-### Simple conversation
+### 簡單對話
 ```python
-converse("What's your name?")
+converse("你叫什麼名字？")
 ```
-System auto-selects voice and model.
+系統會自動選擇語音與模型。
 
-### Make a statement and wait
+### 發表聲明並等待回覆
 ```python
-converse("Tell me more about that")
-```
-
-### Speak without waiting for response
-```python
-converse("Goodbye!", wait_for_response=False)
+converse("請跟我多說一些關於那件事的細節")
 ```
 
-### User requests specific voice
+### 說話且不等待回覆
 ```python
-converse("Hello", voice="nova")
-```
-Only specify voice when explicitly requested by user.
-
-## Common Patterns
-
-### Quick confirmation (no response needed)
-```python
-converse("Done! The file is saved", wait_for_response=False)
+converse("再見！", wait_for_response=False)
 ```
 
-### Ask a question (wait for answer)
+### 使用者要求特定語音
 ```python
-converse("Which file should I open?")
+converse("你好", voice="zf_xiaobei")
+```
+僅在使用者明確要求時才指定語音。
+
+## 常見模式
+
+### 快速確認（不需要回覆）
+```python
+converse("完成！檔案已儲存", wait_for_response=False)
 ```
 
-### Status update during work
+### 提出問題（等待回答）
 ```python
-converse("Searching for that file now", wait_for_response=False)
-# Then immediately run grep/search tools
+converse("我應該打開哪一個檔案？")
 ```
 
-## Privacy Note
-Microphone access required when `wait_for_response=True`. Audio processed via STT service, not stored.
+### 工作期間的狀態更新
+```python
+converse("正在搜尋該檔案", wait_for_response=False)
+# 接著立即執行 grep/search 等搜尋工具
+```
 
-## See Also
-- [Parameters](parameters.md) - Full parameter reference
-- [Patterns](patterns.md) - Advanced conversation patterns
-- [Languages](languages.md) - Non-English language support
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+## 隱私說明
+當 `wait_for_response=True` 時，需要麥克風存取權限。音訊透過 STT 服務處理，不會被儲存。
+
+## 另請參閱
+- [參數說明](parameters.md) - 完整參數參考
+- [對話模式](patterns.md) - 進階對話模式
+- [多國語言](languages.md) - 非英語語言支援
+- [疑難排解](troubleshooting.md) - 常見問題與解決方案

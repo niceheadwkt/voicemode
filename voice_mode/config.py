@@ -150,7 +150,7 @@ def load_voicemode_env():
 # STT prompt for vocabulary biasing - helps Whisper recognize names and technical terms
 # Use when specific words are consistently misrecognized
 # Example: VOICEMODE_STT_PROMPT=tmux, Tali, kubectl, VoiceMode
-# VOICEMODE_STT_PROMPT=
+# VOICEMODE_STT_PROMPT=繁體中文
 
 # STT transient-retry for LOCAL endpoints (VM-926) - local whisper.cpp times out
 # transiently and recovers on retry. Retry the same endpoint on transient failure
@@ -161,9 +161,9 @@ def load_voicemode_env():
 # VOICEMODE_STT_RETRY_BACKOFF_MAX=4.0  # per-sleep cap in seconds
 
 # Comma-separated list of preferred voices (local-only by default)
-VOICEMODE_VOICES=af_sky
+VOICEMODE_VOICES=zf_xiaobei
 # To use OpenAI voices, set OPENAI_API_KEY and add them here:
-# VOICEMODE_VOICES=af_sky,alloy
+# VOICEMODE_VOICES=zf_xiaobei,alloy
 
 # Comma-separated list of preferred models
 # VOICEMODE_TTS_MODELS=tts-1,tts-1-hd,gpt-4o-mini-tts
@@ -203,7 +203,7 @@ VOICEMODE_VOICES=af_sky
 # VOICEMODE_WHISPER_THREADS=
 
 # Language for transcription (auto, en, es, fr, de, it, pt, ru, zh, ja, ko, etc.)
-# VOICEMODE_WHISPER_LANGUAGE=auto
+# VOICEMODE_WHISPER_LANGUAGE=zh
 
 # Path to Whisper models
 # VOICEMODE_WHISPER_MODEL_PATH=~/.voicemode/services/whisper/models
@@ -222,7 +222,7 @@ VOICEMODE_VOICES=af_sky
 # VOICEMODE_KOKORO_CACHE_DIR=~/.voicemode/cache/kokoro
 
 # Default Kokoro voice
-# VOICEMODE_KOKORO_DEFAULT_VOICE=af_sky
+# VOICEMODE_KOKORO_DEFAULT_VOICE=zf_xiaobei
 
 # Max requests before Kokoro worker restarts (mitigates memory leak)
 # See: https://github.com/hexgrad/kokoro/issues/152
@@ -776,7 +776,7 @@ def parse_provider_models(prefix: str) -> dict:
 # New provider endpoint lists configuration
 TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "http://127.0.0.1:8880/v1,https://api.openai.com/v1")
 STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "http://127.0.0.1:2022/v1,https://api.openai.com/v1")
-TTS_VOICES = parse_comma_list("VOICEMODE_VOICES", "af_sky,alloy")
+TTS_VOICES = parse_comma_list("VOICEMODE_VOICES", "zf_xiaobei,alloy")
 TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1,tts-1-hd,gpt-4o-mini-tts")
 STT_MODEL = os.getenv("VOICEMODE_STT_MODEL", "whisper-1")
 STT_MODELS = parse_comma_list("VOICEMODE_STT_MODELS", "")
@@ -862,7 +862,7 @@ def reload_configuration():
     global STT_RETRY_ATTEMPTS, STT_RETRY_BACKOFF, STT_RETRY_BACKOFF_MAX
     TTS_BASE_URLS = parse_comma_list("VOICEMODE_TTS_BASE_URLS", "http://127.0.0.1:8880/v1,https://api.openai.com/v1")
     STT_BASE_URLS = parse_comma_list("VOICEMODE_STT_BASE_URLS", "http://127.0.0.1:2022/v1,https://api.openai.com/v1")
-    TTS_VOICES = parse_comma_list("VOICEMODE_VOICES", "af_sky,alloy")
+    TTS_VOICES = parse_comma_list("VOICEMODE_VOICES", "zf_xiaobei,alloy")
     TTS_MODELS = parse_comma_list("VOICEMODE_TTS_MODELS", "tts-1,tts-1-hd,gpt-4o-mini-tts")
     TTS_MODELS_BY_PROVIDER = parse_provider_models("VOICEMODE_TTS_MODELS")
     STT_MODEL = os.getenv("VOICEMODE_STT_MODEL", "whisper-1")
@@ -896,7 +896,7 @@ WHISPER_MODEL_PATH = expand_path(os.getenv("VOICEMODE_WHISPER_MODEL_PATH", str(P
 KOKORO_PORT = int(os.getenv("VOICEMODE_KOKORO_PORT", "8880"))
 KOKORO_MODELS_DIR = expand_path(os.getenv("VOICEMODE_KOKORO_MODELS_DIR", str(BASE_DIR / "models" / "kokoro")))
 KOKORO_CACHE_DIR = expand_path(os.getenv("VOICEMODE_KOKORO_CACHE_DIR", str(BASE_DIR / "cache" / "kokoro")))
-KOKORO_DEFAULT_VOICE = os.getenv("VOICEMODE_KOKORO_DEFAULT_VOICE", "af_sky")
+KOKORO_DEFAULT_VOICE = os.getenv("VOICEMODE_KOKORO_DEFAULT_VOICE", "zf_xiaobei")
 KOKORO_MAX_REQUESTS = int(os.getenv("VOICEMODE_KOKORO_MAX_REQUESTS", "25"))
 
 # ==================== MLX-AUDIO SERVICE CONFIGURATION ====================

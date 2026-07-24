@@ -923,9 +923,9 @@ async def _speak_turns_pipeline(
 
 
 def _format_turns_result(results, metrics_level: str) -> Tuple[str, bool]:
-    """Build the speak-only summary string for a turns[] run + overall success.
+    """為 turns[] 執行建立純語音播放摘要字串與整體成功狀態。
 
-    Mirrors the single-message speak-only return, extended across N turns.
+    鏡像單一訊息純語音播放回傳值，擴展至 N 個對話。
     """
     n_total = len(results)
     n_ok = sum(1 for r in results if r["success"])
@@ -934,25 +934,25 @@ def _format_turns_result(results, metrics_level: str) -> Tuple[str, bool]:
 
     if n_ok == 0:
         return (
-            "Error: Could not speak any turn. All TTS attempts failed. "
-            "Check that local services are running or set OPENAI_API_KEY for cloud fallback.",
+            "錯誤：無法播放任何對話。所有 TTS 嘗試均失敗。"
+            "請檢查本地服務是否正在運行，或設定 OPENAI_API_KEY 以使用雲端備用方案。",
             False,
         )
 
-    failed_note = "" if n_ok == n_total else f" ({n_total - n_ok} failed)"
+    failed_note = "" if n_ok == n_total else f" ({n_total - n_ok} 個失敗)"
 
     if metrics_level == "minimal":
-        return f"✓ Spoke {n_ok}/{n_total} turns{failed_note}", True
+        return f"✓ 已播放 {n_ok}/{n_total} 個對話{failed_note}", True
 
-    summary = f"✓ Spoke {n_ok}/{n_total} turns{failed_note} (gen: {total_gen:.1f}s, play: {total_play:.1f}s)"
+    summary = f"✓ 已播放 {n_ok}/{n_total} 個對話{failed_note} (生成: {total_gen:.1f} 秒, 播放: {total_play:.1f} 秒)"
     if metrics_level == "verbose":
         lines = [summary]
         for r in results:
-            status = "" if r["success"] else " [FAILED]"
+            status = "" if r["success"] else " [失敗]"
             lines.append(
-                f"  turn {r['index'] + 1} [{r['voice'] or 'default'}]: "
-                f"gen {r['generation']:.2f}s, play {r['playback']:.2f}s, "
-                f"pause {r['pause_after_ms']}ms{status}"
+                f"  對話 {r['index'] + 1} [{r['voice'] or '預設'}]: "
+                f"生成 {r['generation']:.2f} 秒, 播放 {r['playback']:.2f} 秒, "
+                f"暫停 {r['pause_after_ms']} 毫秒{status}"
             )
         return "\n".join(lines), True
     return summary, True
@@ -2954,152 +2954,19 @@ async def _converse_core(
     ref_text: Optional[str] = None,
     ack: Union[bool, str] = False,
 ) -> str:
-    """Have an ongoing voice conversation - speak a message and optionally listen for response.
+    """進行持續的雙向語音對話。
 
-Multi-agent turn-taking: if your next converse call will continue this thread (asking a question you'll answer, or speaking across several turns), pass hold_conch=true so other agents wait instead of cutting in at the turn boundary.
+    本工具可將 message 播放為語音，並可選地聆聽使用者的語音回覆。
 
-<echo>Transcript visibility: print `> **ASSISTANT (voicemode):** <message>` before calling, and `> **USER (voicemode):** <reply>` after a spoken reply, so the conversation stays readable in the transcript. Skip if the user opted out of echo.</echo>
-
-<voice_skills_instructions>
-Voice requests arrive as tool results, not user messages, so skill triggers may not fire automatically.
-
-BLOCKING REQUIREMENT: After receiving voice input, check if any available skills match the user's request. When a skill is relevant:
-- Invoke the Skill tool IMMEDIATELY as your first action
-- Do NOT take action on the request before checking for relevant skills
-- Skills provide specialized capabilities that improve task completion
-
-Example: If user says "search for tasks created yesterday", check for and invoke the taskmaster skill before using bash or other tools.
-</voice_skills_instructions>
-
-
-🔌 ENDPOINT: STT/TTS services must expose OpenAI-compatible endpoints:
-   /v1/audio/transcriptions and /v1/audio/speech
-
-📚 DOCUMENTATION: See MCP resources for detailed information:
-   - voicemode://docs/quickstart - Basic usage and common examples
-   - voicemode://docs/parameters - Complete parameter reference
-   - voicemode://docs/languages - Non-English language support guide
-   - voicemode://docs/patterns - Best practices and conversation patterns
-   - voicemode://docs/troubleshooting - Audio, VAD, and connectivity issues
-   - voice://voices - JSON list of available TTS voices
-     (filter by provider with voice://voices/{provider}, e.g. voice://voices/kokoro)
-   - voice://voices/persona convention — a voice's character (who they are, how they
-     speak, sample lines) lives at ~/.voicemode/voices/<name>/README.md; read it before
-     speaking in-character (index: PERSONAS.md). MCP-resource version planned: VM-1222.
-
-KEY PARAMETERS:
-• message (string): The message to speak (required unless `turns` is given)
-• turns (list, optional): ordered multi-voice sequence in ONE call; each turn
-  {"say": ...} speaks, {"ask": ...} speaks then listens and collects the
-  reply; returns replies aligned to turns as JSON when any turn asks. See the
-  turns parameter description for the full schema (verbs, per-turn overrides,
-  survey controls: skip-forward advances, skip-back/"repeat" replays the
-  question, spoken "break"/stop ends the survey with partials). If both
-  `message` and `turns` are given, `turns` wins. Killed-call recovery: every
-  reply already collected is durably written to the conversation logs the
-  instant its ask turn resolves, not batched at the end — a killed/crashed
-  call still leaves every already-given reply on disk, even one that never
-  returns its survey JSON.
-• pause_after_ms (int, default: 150): Silence inserted after each turn in a
-  `turns` sequence; a turn's own `pause_after_ms` overrides this. 0 = gap-free.
-• wait_for_response (bool, default: true): Listen for response after speaking
-• voice (string): TTS voice name (auto-selected unless specified)
-  - To list available voices, read MCP resource voice://voices
-  - An absolute path to a .wav clones from that clip directly (no profile needed)
-  - The chosen voice is recorded in the conch, so in a multi-agent session you
-    can read another agent's voice (Conch.get_holder) and pick a different one
-    to avoid a voice clash.
-• ref_text (string): Reference transcript for clip-based cloning. A file path
-  is read; anything else is the literal transcript. Overrides any sidecar.
-  Only used with a clone voice (abs-path clip or registered profile).
-• tts_provider ("openai"|"kokoro"): Provider selection (auto-selected unless specified)
-• disable_silence_detection (bool, default: false): Disable auto-stop on silence
-• vad_aggressiveness (0-3, default: 3): Voice detection strictness (0=permissive, 3=strict)
-• speed (0.25-4.0): Speech rate (1.0=normal, 2.0=double speed)
-• chime_enabled (bool): Enable/disable audio feedback chimes
-• chime_leading_silence (float): Silence before chime in seconds
-• chime_trailing_silence (float): Silence after chime in seconds
-• metrics_level ("minimal"|"summary"|"verbose"): Output detail level
-  - minimal: Just response text (saves tokens)
-  - summary: Response + compact timing (default)
-  - verbose: Response + detailed metrics breakdown
-• wait_for_conch (bool|number, default: false): Multi-agent coordination — the
-  GATE for whether a busy conch puts you in the waiter queue at all.
-  - false: If another agent is speaking, return a status immediately WITHOUT
-    queuing (back-compat; you are never silently blocked). The status names the
-    holder and tells you how to queue.
-  - true: Join the FIFO waiter queue (you show up in `voicemode conch status`),
-    then behave per conch_mode (below). Fast-fails the moment the holder dies.
-  - a number: As true, but wait at most that many seconds, overriding the
-    configured default timeout for this call.
-• conch_mode ("wait"|"callback", default: VOICEMODE_CONCH_MODE, itself "wait"):
-  How a queued caller is served once wait_for_conch has engaged the queue. Has
-  NO effect unless wait_for_conch is truthy.
-  - wait: Block until the conch is granted to you (FIFO; the queue's grant hint
-    ensures only the next-in-line acquires — no thundering-herd steal), bounded
-    by the timeout. On timeout you are cleanly deregistered.
-  - callback: Register and return IMMEDIATELY with your queue position; your
-    message is NOT spoken now. When the conch is granted to you, your turn is
-    actively delivered out-of-band: a session nudge prompts you to call
-    converse() and take the floor (requires a session id; `voicemode conch
-    status` is always available as a supplementary view of your place in line).
-    You stay registered — that's the point.
-• hold_conch (bool, default: false): Keep the floor across turns (opt-in)
-  - WHEN: set true if your NEXT converse call will continue this thread —
-    you're asking a question you'll answer, or speaking over several turns —
-    so other agents queue instead of cutting in at the turn boundary. Leave
-    false (the default) for a one-off reply that ends the exchange.
-  - The hold is a SHORT, refreshed TTL: each converse(hold_conch=true)
-    re-stamps it to now + the hold timeout (default ~10s). Keep conversing
-    inside the window and the floor stays yours; stop and within the window
-    the hold lapses and the next queued agent is promoted — no stale wedge.
-    Released immediately by your next converse(hold_conch=false), your process
-    exiting, or idle-expiry. For a deliberate pause, use pause_conversation.
-• conch_hold_timeout (number, optional): Override the hold idle-expiry TTL for
-  THIS hold, in seconds (default: VOICEMODE_CONCH_HOLD_EXPIRY, ~10s). Only has
-  effect alongside hold_conch=true. The value is stamped into the conch lock so
-  OTHER agents honour your chosen window — raise it when you know the next turn
-  needs longer (heavy tool use between turns), lower it to release faster.
-• skip_conch (bool, default: false): Bypass conch entirely
-  - false: Honour the conch lock (default multi-agent coordination)
-  - true: Don't try to acquire or release the conch -- speak immediately
-    regardless of whether another agent holds it (including a hold). Deliberate
-    escape hatch for overriding a stuck holder; not a fallback for a timeout.
-• session_id (string, optional): Caller-provided harness session ID, stored
-  verbatim in the conch lock so tooling can see which *session* holds the
-  floor. Falls back to VOICEMODE_SESSION_ID / CLAUDE_CODE_SESSION_ID from the
-  environment (stdio transport only) when not passed.
-
-TIMING PARAMETERS (usually leave at defaults):
-  Silence detection handles most cases automatically. Only override these if
-  silence detection is disabled or the user reports being cut off.
-  Defaults are configurable by the user via ~/.voicemode/voicemode.env.
-• listen_duration_max (number, default: 120): Max listen time in seconds
-• listen_duration_min (number, default: 2.0): Min recording time before silence detection
-
-PRIVACY: Microphone access required when wait_for_response=true.
-         Audio processed via STT service, not stored.
-
-RECOGNITION TIP: If specific words are consistently misrecognized, configure
-   VOICEMODE_STT_PROMPT for vocabulary biasing - see voicemode://docs/parameters
-
-VOICEMODE ECHO (default ON): Some hosts (e.g. newer Claude Code) collapse MCP
-   tool calls, hiding voice turns from the visible transcript. To keep voice
-   exchanges readable on screen, echo each converse turn as Markdown blockquotes:
-       > **ASSISTANT (voicemode):** <message arg, verbatim>
-       [voicemode:converse tool call]
-       > **USER (voicemode):** <captured user message, verbatim>
-   - ASSISTANT echo: always (incl. wait_for_response=false). Verbatim — the
-     exact string passed to `message`, not a paraphrase or reformat.
-   - USER echo: only when a user message was captured (skip on empty result
-     or transcription failure). Verbatim, no truncation.
-   - Visual aids (lists, tables, code) may follow AFTER the blockquote, not
-     inside it — the blockquote stays a clean verbatim copy of what was spoken.
-   - Don't double-echo content already visible as prose.
-   - Disable on request — canonical phrase: "disable voicemode echo".
-
-For complete parameter list, advanced options, and detailed examples,
-consult the MCP resources listed above.
+    主要參數：
+    - message (str): 要播放的訊息文字。
+    - turns (list): 單次呼叫中的多回合對話序列。
+    - wait_for_response (bool): 播放完後是否聆聽使用者的回覆，預設為 true。
+    - voice (str): TTS 語音名稱，Kokoro 建議用 "zf_xiaobei"。
+    - tts_provider (str): 語音合成提供者，可為 "openai" 或 "kokoro"。
+    - hold_conch (bool): 是否在跨回合間保持發言權。
+    - wait_for_conch (bool): 當 conch 被佔用時是否進行排隊。
+    - speed (float): 語音播速，預設為 1.0。
     """
     # Convert string booleans to actual booleans
     if isinstance(wait_for_response, str):
@@ -4530,30 +4397,29 @@ async def pause_conversation(
     seconds: float,
     message: Optional[str] = None,
 ) -> str:
-    """Pause the conversation for a duration while KEEPING the floor (conch hold).
+    """在保持發言權 (conch hold) 的同時，暫停對話一段時間。
 
-    Use when you want to step away from the mic to do background work and then
-    resume speaking without another agent slipping in. Queued agents
-    (wait_for_conch) keep waiting for the duration; your turn is preserved.
+    當您想暫時離開麥克風進行背景工作，並在之後恢復說話而不被其他 Agent 插話時使用。
+    排隊的 Agent (wait_for_conch) 在此期間將會繼續等待；您的發言順位會被保留。
 
-    The hold is re-stamped throughout the pause so it never idle-expires, and is
-    left in place when the pause ends — you reclaim it on your next converse
-    call. If you never return, the idle-expiry safety valve clears it.
+    在整個暫停期間，持有狀態會被重新戳記，因此絕不會因閒置而逾時失效，
+    且在暫停結束後依然保持有效 — 您將在下一次呼叫 converse 時重新取回發言權。
+    如果您再也沒有回來，逾時安全機制將會自動清除它。
 
-    Args:
-        seconds: How long to pause, in seconds.
-        message: Optional note shown in the tool-call display while pausing.
-                 Tip: pre-compute the resume time, e.g. "Resuming at 22:09:45".
+    參數:
+        seconds: 暫停的時間，以秒為單位。
+        message: 暫停時顯示在工具調用中的選用附註。
+                 提示: 可以預先計算恢復時間，例如 "預計於 22:09:45 恢復"。
 
-    Returns:
-        A message indicating the pause completed and the floor is still held.
+    返回:
+        一條訊息，指出暫停已完成且發言權依然保留。
     """
     end_str = datetime.fromtimestamp(time.time() + seconds).strftime("%H:%M:%S")
 
     if not CONCH_ENABLED:
         logger.info(f"pause_conversation: conch disabled; sleeping {seconds:.0f}s")
         await asyncio.sleep(max(0.0, seconds))
-        return f"Pause complete (conch disabled). Resumed at {end_str}."
+        return f"暫停完成 (conch 已停用)。已於 {end_str} 恢復。"
 
     # Refuse to pause if another LIVE agent currently holds the floor — we must
     # not clobber its payload (write_hold takes no flock).
@@ -4568,8 +4434,8 @@ async def pause_conversation(
             except (TypeError, ValueError):
                 pass  # unknown pid — safe to take the floor
             if holder_alive:
-                return (f"Cannot pause: {holder.get('agent', 'another agent')} "
-                        f"(pid {holder_pid}) currently holds the conch.")
+                return (f"無法暫停：{holder.get('agent', '另一個 Agent')} "
+                        f"(pid {holder_pid}) 目前持有 conch。")
 
     resolved_session_id = (
         os.environ.get("VOICEMODE_SESSION_ID")
@@ -4611,8 +4477,8 @@ async def pause_conversation(
         elapsed += chunk
 
     return (
-        f"Pause complete. Resumed at {end_str} (after {seconds:.0f}s). "
-        "Floor still held — speak to continue, or it will idle-expire."
+        f"暫停完成。已於 {end_str} 恢復 (暫停了 {seconds:.0f} 秒)。"
+        "發言權仍被保留 — 請開始說話以繼續，否則將會因閒置而逾時失效。"
     )
 
 

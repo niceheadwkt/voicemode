@@ -31,7 +31,7 @@ def load_dependencies() -> dict:
         # Try importlib.resources first (Python 3.9+)
         from importlib.resources import files
         yaml_path = files("voice_mode") / "dependencies.yaml"
-        with yaml_path.open() as f:
+        with yaml_path.open(encoding="utf-8") as f:
             return yaml.safe_load(f)
     except (ImportError, AttributeError):
         # Fallback to pkg_resources
@@ -44,7 +44,7 @@ def load_dependencies() -> dict:
             current_dir = Path(__file__).parent.parent.parent
             yaml_file = current_dir / "dependencies.yaml"
             if yaml_file.exists():
-                with yaml_file.open() as f:
+                with yaml_file.open(encoding="utf-8") as f:
                     return yaml.safe_load(f)
             raise FileNotFoundError("Could not find dependencies.yaml")
 

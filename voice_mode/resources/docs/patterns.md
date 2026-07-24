@@ -1,240 +1,240 @@
-# Voicemode Conversation Patterns
+# VoiceMode 對話模式指南
 
-## Parallel Operations Pattern (RECOMMENDED)
+## 並行操作模式 (推薦)
 
-When performing actions that don't require user confirmation, use `wait_for_response=False` to speak while simultaneously executing other tools. This creates natural, flowing conversations.
+執行不需要使用者確認的動作時，使用 `wait_for_response=False` 來播放語音，同時在背景執行其他工具。這能建立自然流暢的互動體驗。
 
-### Pattern
+### 模式範例
 ```python
-converse("Status update", wait_for_response=False)
-# Immediately run other tools in parallel
+converse("正在更新狀態...", wait_for_response=False)
+# 立即並行執行其他工具
 ```
 
-The speech plays while your actions execute simultaneously.
+語音會在您的背景工作執行的同時播放。
 
-### Benefits
-- No dead air during operations
-- User knows what's happening
-- More natural conversation flow
-- Better user experience
+### 好處
+- 背景操作時不會有尷尬的靜音空檔
+- 使用者能清楚知道目前進度
+- 對話流程更為自然
+- 提供更優質的使用者體驗
 
-## Parallel Pattern Examples
+## 並行模式範例
 
-### Search narration
+### 搜尋過程旁白
 ```python
-converse("Searching for that file", wait_for_response=False)
-# Immediately execute:
+converse("正在為您搜尋該檔案", wait_for_response=False)
+# 立即執行：
 Grep(pattern="function_name", output_mode="files_with_matches")
 ```
 
-### Processing update
+### 處理進度更新
 ```python
-converse("Analyzing the screenshot", wait_for_response=False)
-# Immediately execute:
+converse("正在分析螢幕截圖", wait_for_response=False)
+# 立即執行：
 Read(file_path="/path/to/screenshot.png")
 ```
 
-### Creation status
+### 建立狀態
 ```python
-converse("Creating that document now", wait_for_response=False)
-# Immediately execute:
+converse("現在開始為您建立該文件", wait_for_response=False)
+# 立即執行：
 Write(file_path="/path/to/file.md", content="...")
 ```
 
-### Quick confirmation
+### 快速確認
 ```python
-converse("Done! The file is saved", wait_for_response=False)
-# No wait needed for simple confirmations
+converse("完成！檔案已儲存", wait_for_response=False)
+# 簡單的確認不需要等待使用者回覆
 ```
 
-## When to Use Parallel Pattern
+## 何時使用並行模式
 
-✅ **Use parallel pattern for:**
-- File operations (reading, writing, searching)
-- Data processing (analysis, computation)
-- Status updates during long operations
-- Confirmations that don't need response
+✅ **適合使用並行模式的情境：**
+- 檔案操作（讀取、寫入、搜尋）
+- 資料處理（分析、計算）
+- 長時間操作期間的狀態更新
+- 不需要使用者回覆的確認訊息
 
-❌ **Don't use parallel pattern for:**
-- Questions requiring answers
-- Confirmations needing user approval
-- Error messages needing acknowledgment
-- End of conversation farewells (unless doing cleanup)
+❌ **不適合使用並行模式的情境：**
+- 需要使用者回答的問題
+- 需要使用者核准的確認動作
+- 需要使用者確認知悉的錯誤訊息
+- 對話結束時的道別（除非正在執行清理工作）
 
-## Emotional Speech Pattern
+## 情緒語音模式
 
-Use OpenAI's `gpt-4o-mini-tts` model with `tts_instructions` for emotional context.
+使用 OpenAI 的 `gpt-4o-mini-tts` 模型搭配 `tts_instructions` 來表達特定的情緒語調。
 
-### Excitement
+### 興奮
 ```python
 converse(
-    "We did it!",
+    "我們成功了！",
     tts_model="gpt-4o-mini-tts",
-    tts_instructions="Sound extremely excited and celebratory"
+    tts_instructions="語氣聽起來非常興奮且帶有慶祝感"
 )
 ```
 
-### Sadness
+### 悲傷
 ```python
 converse(
-    "I'm sorry for your loss",
+    "對於您的損失，我深感遺憾",
     tts_model="gpt-4o-mini-tts",
-    tts_instructions="Sound gentle and sympathetic"
+    tts_instructions="語氣溫和且帶有同理心"
 )
 ```
 
-### Urgency
+### 緊急
 ```python
 converse(
-    "Watch out!",
+    "當心！",
     tts_model="gpt-4o-mini-tts",
-    tts_instructions="Sound urgent and concerned"
+    tts_instructions="語氣聽起來緊急且關切"
 )
 ```
 
-### Humor
+### 幽默
 ```python
 converse(
-    "That's hilarious!",
+    "那太搞笑了！",
     tts_model="gpt-4o-mini-tts",
-    tts_instructions="Sound amused and playful"
+    tts_instructions="語氣聽起來好笑且帶有玩味"
 )
 ```
 
-**Note:** Emotional speech uses OpenAI API and incurs costs (~$0.02/minute)
+**備註：** 情緒語音使用 OpenAI API，會產生額外費用（每分鐘約 $0.02 美元）。
 
-## Speed Control Pattern
+## 播速控制模式
 
-Adjust speech rate for different contexts.
+根據不同的情境調整語音播放速率。
 
-### Normal speed (default)
+### 正常速度（預設）
 ```python
-converse("This is normal speed")
+converse("這是正常的播速")
 ```
 
-### Faster speech (quick updates)
+### 較快播速（快速狀態更新）
 ```python
-converse("This is faster speech", speed=1.5)
+converse("這是較快的播速", speed=1.5)
 ```
 
-### Double speed (very rapid)
+### 雙倍速（非常快速）
 ```python
-converse("This is double speed", speed=2.0)
+converse("這是雙倍速的播速", speed=2.0)
 ```
 
-### Slower speech (emphasis/clarity)
+### 較慢播速（強調或提升清晰度）
 ```python
-converse("This is slower speech", speed=0.8)
+converse("這是較慢的播速", speed=0.8)
 ```
 
-**Note:** Works with both OpenAI and Kokoro providers
+**備註：** OpenAI 與 Kokoro 提供者均支援此功能。
 
-## VAD Aggressiveness Pattern
+## VAD 嚴格度模式
 
-Adjust Voice Activity Detection based on environment.
+根據環境噪音調整語音活動偵測 (VAD) 的嚴格度。
 
-### Quiet room - capture all speech
+### 安靜房間 - 捕獲所有輕聲說話
 ```python
-converse("Let's have a conversation", vad_aggressiveness=0)
+converse("讓我們開始對話吧", vad_aggressiveness=0)
 ```
 
-### Normal home/office (default)
+### 一般居家/辦公室（預設）
 ```python
-converse("Tell me about your day")  # Uses default (2)
+converse("跟我說說你今天過得怎麼樣")  # 使用預設值 (2)
 ```
 
-### Noisy cafe/outdoors
+### 吵雜的咖啡廳/戶外
 ```python
-converse("Can you hear me?", vad_aggressiveness=3)
+converse("你聽得見我說話嗎？", vad_aggressiveness=3)
 ```
 
-### Balanced for most cases
+### 適合多數情況的平衡設定
 ```python
-converse("How are you?", vad_aggressiveness=2)
+converse("你好嗎？", vad_aggressiveness=2)
 ```
 
-**Remember:**
-- Lower values (0-1) = more permissive, may detect non-speech
-- Higher values (2-3) = more strict, may miss soft speech
+**請記住：**
+- 較低的值 (0-1) = 較寬鬆，可能會誤判非人聲的背景音
+- 較高的值 (2-3) = 較嚴格，可能會漏掉較輕聲的說話
 
-## Skip TTS Pattern
+## 跳過 TTS 模式
 
-Use text-only mode for faster development iterations.
+使用純文字模式以加快開發與測試迭代的速度。
 
-### Fast iteration mode
+### 快速迭代模式
 ```python
-converse("Processing your request", skip_tts=True)  # Text only
+converse("正在處理您的請求", skip_tts=True)  # 僅文字顯示，無語音
 ```
 
-### Important announcement (always voice)
+### 重要公告（強制播放語音）
 ```python
-converse("Warning: System will restart", skip_tts=False)
+converse("警告：系統即將重新啟動", skip_tts=False)
 ```
 
-### Quick confirmation
+### 快速確認
 ```python
-converse("Done!", skip_tts=True, wait_for_response=False)
+converse("完成！", skip_tts=True, wait_for_response=False)
 ```
 
-### Follow user preference (default)
+### 遵循使用者偏好（預設）
 ```python
-converse("Hello")  # Uses VOICEMODE_SKIP_TTS setting
+converse("你好")  # 使用 VOICEMODE_SKIP_TTS 的環境設定
 ```
 
-## Multi-step Conversation Pattern
+## 多步驟對話模式
 
-Handle complex multi-turn conversations.
+處理複雜的多回合互動。
 
-### Ask follow-up questions
+### 提出後續問題
 ```python
-# First question
-response1 = converse("What would you like to do?")
-
-# Process response and ask follow-up
-if "edit" in response1.lower():
-    response2 = converse("Which file should I edit?")
-    # Continue based on response2
+# 第一個問題
+response1 = converse("您今天想做些什麼？")
+ 
+# 處理回覆並提出後續問題
+if "編輯" in response1.lower() or "edit" in response1.lower():
+    response2 = converse("您想要編輯哪一個檔案？")
+    # 根據 response2 繼續後續動作
 ```
 
-### Confirm before action
+### 執行動作前進行確認
 ```python
-converse("I'll delete all temporary files. Is that okay?")
-# Wait for confirmation before proceeding
+converse("我即將刪除所有暫存檔案。這樣可以嗎？")
+# 在繼續執行前等待使用者語音確認
 ```
 
-### Provide progress updates
+### 提供進度更新
 ```python
-converse("Starting backup process", wait_for_response=False)
-# Do first part
-converse("50% complete", wait_for_response=False)
-# Do second part
-converse("Backup complete!", wait_for_response=False)
+converse("開始備份程序", wait_for_response=False)
+# 執行第一部分備份
+converse("已完成百分之五十", wait_for_response=False)
+# 執行第二部分備份
+converse("備份已完成！", wait_for_response=False)
 ```
 
-## Error Handling Pattern
+## 錯誤處理模式
 
-Communicate errors clearly.
+清晰地傳達錯誤訊息。
 
-### Simple error
+### 簡單錯誤
 ```python
 try:
-    # Some operation
+    # 執行某些操作
     pass
 except Exception as e:
-    converse(f"I encountered an error: {str(e)}. Would you like me to try again?")
+    converse(f"我遇到了一個錯誤：{str(e)}。您希望我再試一次嗎？")
 ```
 
-### Provide alternatives
+### 提供替代方案
 ```python
-converse("I couldn't find that file. Would you like me to search in a different directory?")
+converse("我找不到那個檔案。您希望我搜尋其他的目錄嗎？")
 ```
 
-### Request clarification
+### 請求澄清
 ```python
-converse("I found multiple files with that name. Which one did you mean?")
+converse("我發現了多個同名檔案。您指的是哪一個？")
 ```
 
-## See Also
-- `voicemode-quickstart` - Basic usage examples
-- `voicemode-parameters` - Full parameter reference
-- `voicemode-troubleshooting` - Common issues
+## 另請參閱
+- `voicemode-quickstart` - 快速入門範例
+- `voicemode-parameters` - 完整參數參考
+- `voicemode-troubleshooting` - 常見問題排解
