@@ -21,8 +21,22 @@ def find_kokoro_fastapi() -> Optional[str]:
     for path in paths_to_check:
         if path.exists() and path.is_dir():
             # Look for start scripts
-            if platform.system() == "Darwin":
+            system = platform.system()
+            if system == "Darwin":
                 start_script = path / "start-gpu_mac.sh"
+            elif system == "Windows":
+                if has_gpu_support():
+                    possible_scripts = [
+                        path / "start-gpu.ps1",
+                        path / "start-cpu.ps1",
+                    ]
+                else:
+                    possible_scripts = [
+                        path / "start-cpu.ps1",
+                        path / "start-gpu.ps1",
+                    ]
+
+                start_script = next((script for script in possible_scripts if script.exists()), None)
             else:
                 # Check for appropriate start script
                 if has_gpu_support():
@@ -78,7 +92,13 @@ def is_kokoro_starting_up() -> Optional[str]:
                     return "loading models (please wait)"
 
                 # Check for start script running
-                if 'start-gpu_mac.sh' in cmdline_str or 'start-cpu.sh' in cmdline_str or 'start-gpu.sh' in cmdline_str:
+                if (
+                    'start-gpu_mac.sh' in cmdline_str
+                    or 'start-cpu.sh' in cmdline_str
+                    or 'start-gpu.sh' in cmdline_str
+                    or 'start-cpu.ps1' in cmdline_str
+                    or 'start-gpu.ps1' in cmdline_str
+                ):
                     if 'kokoro' in cmdline_str:
                         return "starting up"
 

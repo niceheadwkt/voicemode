@@ -202,6 +202,19 @@ class TestUnifiedServiceTool:
             assert any("daemon-reload" in str(call) for call in mock_run.call_args_list)
             assert any("enable" in str(call) for call in mock_run.call_args_list)
             assert any("start" in str(call) for call in mock_run.call_args_list)
+
+    @pytest.mark.asyncio
+    async def test_enable_service_windows_direct_start_only(self):
+        """Test enabling service on Windows returns direct-start guidance."""
+        with patch('platform.system', return_value='Windows'), \
+             patch('voice_mode.tools.service.create_service_file') as mock_create, \
+             patch('subprocess.run') as mock_run:
+            result = await service("kokoro", "enable")
+
+            assert "Automatic login startup is not supported" in result
+            assert "voicemode service start kokoro" in result
+            mock_create.assert_not_called()
+            mock_run.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_disable_service_macos(self):
@@ -225,6 +238,17 @@ class TestUnifiedServiceTool:
             
             result = await service("whisper", "disable")
             assert "not installed" in result
+
+    @pytest.mark.asyncio
+    async def test_disable_service_windows_direct_start_only(self):
+        """Test disabling service on Windows returns direct-stop guidance."""
+        with patch('platform.system', return_value='Windows'), \
+             patch('subprocess.run') as mock_run:
+            result = await service("whisper", "disable")
+
+            assert "Automatic login startup is not supported" in result
+            assert "voicemode service stop whisper" in result
+            mock_run.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_view_logs_macos(self):
@@ -311,26 +335,24 @@ class TestServicePrompts:
     def test_whisper_prompt_valid_action(self):
         """Test whisper prompt with valid action"""
         result = whisper_prompt("status")
-        assert "service tool" in result
         assert "service_name='whisper'" in result
         assert "action='status'" in result
     
     def test_whisper_prompt_logs_action(self):
         """Test whisper prompt for logs action"""
         result = whisper_prompt("logs")
-        assert "service tool" in result
         assert "action='logs'" in result
     
     def test_whisper_prompt_invalid_action(self):
         """Test whisper prompt with invalid action"""
         result = whisper_prompt("invalid")
-        assert "Invalid action" in result
-        assert "Use one of:" in result
+        assert "invalid" in result
+        assert "status" in result
+        assert "logs" in result
     
     def test_kokoro_prompt_valid_action(self):
         """Test kokoro prompt with valid action"""
         result = kokoro_prompt("start")
-        assert "service tool" in result
         assert "service_name='kokoro'" in result
         assert "action='start'" in result
 

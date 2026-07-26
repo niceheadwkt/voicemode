@@ -57,9 +57,10 @@ class TestPlaintextStore:
     def test_save_sets_permissions(self, temp_credentials_dir):
         store = PlaintextStore()
         store.save(SAMPLE_CREDENTIALS)
-        cred_file = temp_credentials_dir / "credentials"
-        mode = oct(cred_file.stat().st_mode & 0o777)
-        assert mode == "0o600"
+        import sys
+        if sys.platform != "win32":
+            mode = oct(cred_file.stat().st_mode & 0o777)
+            assert mode == "0o600"
 
     def test_save_and_load_roundtrip(self, temp_credentials_dir):
         store = PlaintextStore()

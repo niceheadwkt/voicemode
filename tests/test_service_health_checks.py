@@ -1,6 +1,7 @@
 """Tests for service health check functionality."""
 
 import os
+import platform
 import tempfile
 from pathlib import Path
 import pytest
@@ -42,7 +43,8 @@ def test_unified_startup_scripts_exist():
     # Check Whisper unified startup script (used by both macOS and Linux)
     whisper_script = templates_dir / "start-whisper-server.sh"
     assert whisper_script.exists()
-    assert whisper_script.stat().st_mode & 0o111  # Check executable
+    if platform.system() != "Windows":
+        assert whisper_script.stat().st_mode & 0o111  # Check executable
 
     # Kokoro doesn't have a unified startup script in templates
     # It uses start-gpu_mac.sh, start-gpu.sh, or start-cpu.sh from the Kokoro installation
@@ -58,7 +60,7 @@ def test_startup_script_content():
 
     # Check Whisper startup script
     whisper_script = templates_dir / "start-whisper-server.sh"
-    content = whisper_script.read_text()
+    content = whisper_script.read_text(encoding="utf-8")
     assert "#!/usr/bin/env bash" in content
     assert "source" in content  # Sources voicemode.env
     assert "VOICEMODE_WHISPER_MODEL" in content  # Reads model config

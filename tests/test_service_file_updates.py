@@ -43,15 +43,19 @@ def test_get_service_config_vars_handles_missing_start_script():
         with patch('voice_mode.tools.service.find_kokoro_fastapi') as mock_find:
             mock_find.return_value = tmpdir
             
+            system = platform.system()
+            if system == "Windows":
+                start_cpu = Path(tmpdir) / "start-cpu.ps1"
+                start_cpu.write_text("Write-Output test", encoding="utf-8")
             # On Linux, create only start-gpu.sh (not start.sh)
-            if platform.system() != "Darwin":
+            elif system != "Darwin":
                 start_gpu = Path(tmpdir) / "start-gpu.sh"
-                start_gpu.write_text("#!/bin/bash\necho test")
+                start_gpu.write_text("#!/bin/bash\necho test", encoding="utf-8")
                 start_gpu.chmod(0o755)
             else:
                 # On macOS, create start-gpu_mac.sh
                 start_mac = Path(tmpdir) / "start-gpu_mac.sh"
-                start_mac.write_text("#!/bin/bash\necho test")
+                start_mac.write_text("#!/bin/bash\necho test", encoding="utf-8")
                 start_mac.chmod(0o755)
             
             # Get config vars - should find the correct script
@@ -62,7 +66,9 @@ def test_get_service_config_vars_handles_missing_start_script():
             assert Path(config_vars["START_SCRIPT"]).exists()
             
             # Verify it found the right script
-            if platform.system() != "Darwin":
+            if system == "Windows":
+                assert "start-cpu.ps1" in config_vars["START_SCRIPT"]
+            elif system != "Darwin":
                 assert "start-gpu.sh" in config_vars["START_SCRIPT"]
             else:
                 assert "start-gpu_mac.sh" in config_vars["START_SCRIPT"]
@@ -110,7 +116,7 @@ def test_systemd_templates_use_restart_always_not_on_failure():
 
     for unit_path in units:
         assert unit_path.exists(), f"missing template: {unit_path}"
-        content = unit_path.read_text()
+        content = unit_path.read_text(encoding="utf-8")
         # Catch both `Restart=on-failure` and `Restart = on-failure` (and
         # commented-out historical references stay fine — they start with #).
         for line in content.splitlines():
@@ -143,7 +149,7 @@ def test_kokoro_systemd_template_keeps_restart_prevent_exit_status_guard():
         / "systemd"
         / "voicemode-kokoro.service"
     )
-    content = unit.read_text()
+    content = unit.read_text(encoding="utf-8")
     assert "RestartPreventExitStatus=127" in content, (
         "voicemode-kokoro.service must keep RestartPreventExitStatus=127 to "
         "prevent Restart=always fight-looping on missing executable (VM-1398)."
@@ -156,8 +162,11 @@ def test_get_service_config_vars_selects_gpu_script_when_gpu_available():
     import tempfile
     from pathlib import Path
 
-    if platform.system() == "Darwin":
+    system = platform.system()
+    if system == "Darwin":
         pytest.skip("macOS always uses start-gpu_mac.sh")
+    if system == "Windows":
+        pytest.skip("Windows uses PowerShell Kokoro startup scripts")
     
     with tempfile.TemporaryDirectory() as tmpdir:
         # Mock find_kokoro_fastapi to return our temp directory
@@ -169,8 +178,8 @@ def test_get_service_config_vars_selects_gpu_script_when_gpu_available():
                 # Create both GPU and CPU scripts
                 gpu_script = Path(tmpdir) / "start-gpu.sh"
                 cpu_script = Path(tmpdir) / "start-cpu.sh"
-                gpu_script.write_text("#!/bin/bash\necho gpu")
-                cpu_script.write_text("#!/bin/bash\necho cpu")
+                gpu_script.write_text("#!/bin/bash\necho gpu", encoding="utf-8")
+                cpu_script.write_text("#!/bin/bash\necho cpu", encoding="utf-8")
                 gpu_script.chmod(0o755)
                 cpu_script.chmod(0o755)
                 
@@ -188,8 +197,11 @@ def test_get_service_config_vars_selects_cpu_script_when_no_gpu():
     import tempfile
     from pathlib import Path
     
-    if platform.system() == "Darwin":
+    system = platform.system()
+    if system == "Darwin":
         pytest.skip("macOS always uses start-gpu_mac.sh")
+    if system == "Windows":
+        pytest.skip("Windows uses PowerShell Kokoro startup scripts")
     
     with tempfile.TemporaryDirectory() as tmpdir:
         # Mock find_kokoro_fastapi to return our temp directory
@@ -201,8 +213,8 @@ def test_get_service_config_vars_selects_cpu_script_when_no_gpu():
                 # Create both GPU and CPU scripts
                 gpu_script = Path(tmpdir) / "start-gpu.sh"
                 cpu_script = Path(tmpdir) / "start-cpu.sh"
-                gpu_script.write_text("#!/bin/bash\necho gpu")
-                cpu_script.write_text("#!/bin/bash\necho cpu")
+                gpu_script.write_text("#!/bin/bash\necho gpu", encoding="utf-8")
+                cpu_script.write_text("#!/bin/bash\necho cpu", encoding="utf-8")
                 gpu_script.chmod(0o755)
                 cpu_script.chmod(0o755)
                 

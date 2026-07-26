@@ -218,6 +218,7 @@ class MusicLibrary:
             Dict with artist, album, title, year, track_number, format,
             is_sidecar, sidecar_type.
         """
+        rel_path = rel_path.replace("\\", "/")
         path = Path(rel_path)
         filename = path.name
         base_name = path.stem
@@ -318,7 +319,7 @@ class MusicLibrary:
             for file_path in files:
                 # Get relative path
                 try:
-                    rel_path = str(file_path.relative_to(music_path))
+                    rel_path = file_path.relative_to(music_path).as_posix()
                 except ValueError:
                     continue
 
@@ -464,6 +465,7 @@ class MusicLibrary:
         Returns:
             Track object or None if not found.
         """
+        path = path.replace("\\", "/")
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()

@@ -1,10 +1,11 @@
 @echo off
+chcp 65001 > nul
 setlocal enabledelayedexpansion
 
-set BASE_DIR=C:\Users\ch26788\.voicemode\services\whisper
+set BASE_DIR=%USERPROFILE%\.voicemode\services\whisper
 set SERVICE_DIR=!BASE_DIR!\Release
 set MODEL_DIR=!BASE_DIR!\models
-set MODEL_PATH=!MODEL_DIR!\ggml-base.bin
+set MODEL_PATH=!MODEL_DIR!\ggml-large-v3-turbo.bin
 
 set PY_EXE=python
 if exist "C:\aiTest\voicemode\.venv\Scripts\python.exe" (
@@ -56,14 +57,14 @@ exit /b 1
 
 if exist "!MODEL_PATH!" goto :skip_download_model
 
-echo [INFO] ggml-base.bin model not found.
-echo Downloading ggml-base.bin model (approx. 142MB) ...
-!PY_EXE! -c "import urllib.request, ssl; ssl._create_default_https_context = ssl._create_unverified_context; urllib.request.urlretrieve('https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin', r'!MODEL_PATH!')"
+echo [INFO] ggml-large-v3-turbo.bin model not found.
+echo Downloading ggml-large-v3-turbo.bin model (approx. 1.5GB) ...
+!PY_EXE! -c "import urllib.request, ssl; ssl._create_default_https_context = ssl._create_unverified_context; urllib.request.urlretrieve('https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin', r'!MODEL_PATH!')"
 
 if exist "!MODEL_PATH!" goto :skip_download_model
 
 echo [ERROR] Model download failed. Please download it manually and put it into !MODEL_DIR!:
-echo https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+echo https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin
 pause
 exit /b 1
 
@@ -84,15 +85,15 @@ pause
 exit /b 1
 
 :run_whisper_server
-whisper-server.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 --inference-path "/v1/audio/transcriptions"
+whisper-server.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 -t 8 -l zh --prompt "以下是正體繁體中文對話：" --inference-path "/v1/audio/transcriptions"
 goto :end
 
 :run_server
-server.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 --inference-path "/v1/audio/transcriptions"
+server.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 -t 8 -l zh --prompt "以下是正體繁體中文對話：" --inference-path "/v1/audio/transcriptions"
 goto :end
 
 :run_main
-main.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 --inference-path "/v1/audio/transcriptions"
+main.exe -m "!MODEL_PATH!" --port 2022 --host 127.0.0.1 -t 8 -l zh --prompt "以下是正體繁體中文對話：" --inference-path "/v1/audio/transcriptions"
 goto :end
 
 :end

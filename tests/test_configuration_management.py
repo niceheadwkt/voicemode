@@ -6,6 +6,7 @@ import shlex
 import shutil
 import subprocess
 import pytest
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, mock_open, MagicMock
@@ -586,6 +587,7 @@ class TestEnvValueShellSafety:
         assert _shell_single_quote("it's") == "'it'\\''s'"
         assert _shell_single_quote("plain") == "'plain'"
 
+    @pytest.mark.skipif(sys.platform == "win32" or shutil.which("bash") is None, reason="bash required and not supported natively on Windows")
     @pytest.mark.parametrize("payload", _INJECTION_PAYLOADS)
     def test_payload_is_inert_when_sourced(self, payload, tmp_path):
         """The PoC: write a payload, `source` the file, assert nothing ran."""
@@ -624,7 +626,7 @@ def _scripts_dir() -> Path:
 
 
 def _extract_loader(script_path: Path) -> str:
-    text = script_path.read_text()
+    text = script_path.read_text(encoding="utf-8")
     m = re.search(
         r"(# >>> voicemode_load_env_file.*?# <<< voicemode_load_env_file <<<)",
         text, re.DOTALL,
@@ -633,13 +635,13 @@ def _extract_loader(script_path: Path) -> str:
     return m.group(1)
 
 
-@pytest.mark.skipif(shutil.which("bash") is None, reason="bash required")
+@pytest.mark.skipif(sys.platform == "win32" or shutil.which("bash") is None, reason="bash required and start scripts not supported natively on Windows")
 class TestStartScriptEnvLoader:
     """The start scripts must load config without `source` (GHSA-h97v-r3jw-cf6f)."""
 
     def test_scripts_do_not_source_env_file(self):
         for name in _START_SCRIPTS:
-            text = (_scripts_dir() / name).read_text()
+            text = (_scripts_dir() / name).read_text(encoding="utf-8")
             assert 'source "$VOICEMODE_DIR/voicemode.env"' not in text, name
             assert "voicemode_load_env_file" in text, name
 
@@ -652,7 +654,7 @@ class TestStartScriptEnvLoader:
     def test_loader_loads_scalars_and_neutralizes_injection(self, tmp_path):
         loader = _extract_loader(_scripts_dir() / "start-whisper-server.sh")
         loader_file = tmp_path / "loader.sh"
-        loader_file.write_text(loader + "\n")
+        loader_file.write_text(loader + "\n", encoding="utf-8")
 
         sub = tmp_path / "PWNED_SUB"
         btick = tmp_path / "PWNED_BTICK"
@@ -667,7 +669,8 @@ class TestStartScriptEnvLoader:
             f"VOICEMODE_VOICES={evil_sub}\n"
             f"VOICEMODE_EVIL={evil_btick}\n"
             'VOICEMODE_STT_PROMPT="claude CLAUDE.md Cora"\n'
-            "VOICEMODE_SERVE_SECRET='s3cr3t_AB.+/='\n"
+            "VOICEMODE_SERVE_SECRET='s3cr3t_AB.+/='\n",
+            encoding="utf-8"
         )
         script = (
             "set -o nounset -o pipefail -o errexit\n"

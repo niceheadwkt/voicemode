@@ -24,6 +24,11 @@ import time
 from pathlib import Path
 
 import pytest
+
+pytestmark = pytest.mark.skipif(
+    not hasattr(socket, "AF_UNIX"),
+    reason="Unix domain sockets (AF_UNIX) not supported on this platform"
+)
 from click.testing import CliRunner
 
 from voice_mode.cli import voice_mode_main_cli

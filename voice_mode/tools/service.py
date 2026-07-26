@@ -67,8 +67,26 @@ def get_service_config_vars(service_name: str) -> Dict[str, Any]:
 
         # Find start script
         start_script = None
-        if platform.system() == "Darwin":
+        system = platform.system()
+        if system == "Darwin":
             start_script = Path(kokoro_dir) / "start-gpu_mac.sh"
+        elif system == "Windows":
+            if has_gpu_support():
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-gpu.ps1",
+                    Path(kokoro_dir) / "start-cpu.ps1",
+                ]
+            else:
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-cpu.ps1",
+                    Path(kokoro_dir) / "start-gpu.ps1",
+                ]
+
+            start_script = None
+            for script in possible_scripts:
+                if script.exists():
+                    start_script = script
+                    break
         else:
             # On Linux, prefer GPU script if GPU is available, otherwise use CPU script
             if has_gpu_support():
@@ -138,7 +156,7 @@ async def install_voicemode_start_script() -> Dict[str, Any]:
         if not template_path.exists():
             return {"success": False, "error": f"Template not found: {template_path}"}
 
-        template_content = template_path.read_text()
+        template_content = template_path.read_text(encoding="utf-8")
 
         # Write the start script
         with open(start_script_path, 'w') as f:
@@ -160,6 +178,12 @@ def load_service_template(service_name: str) -> str:
     system = platform.system()
     templates_dir = Path(__file__).parent.parent / "templates"
 
+    if system == "Windows":
+        raise FileNotFoundError(
+            "Windows does not use launchd/systemd service templates. "
+            "Use `voicemode service start <service>` for direct background startup."
+        )
+
     # mlx-audio is Apple-Silicon-only -- no Linux systemd unit ships.
     if service_name == "mlx_audio" and system != "Darwin":
         raise FileNotFoundError(
@@ -179,7 +203,7 @@ def load_service_template(service_name: str) -> str:
     if not template_path.exists():
         raise FileNotFoundError(f"Service template not found: {template_path}")
 
-    return template_path.read_text()
+    return template_path.read_text(encoding="utf-8")
 
 
 def create_service_file(service_name: str) -> tuple[Path, str]:
@@ -196,6 +220,12 @@ def create_service_file(service_name: str) -> tuple[Path, str]:
     """
     system = platform.system()
     home = os.path.expanduser("~")
+
+    if system == "Windows":
+        raise NotImplementedError(
+            "Windows automatic service-file generation is not supported yet. "
+            "Use direct service start/stop commands instead."
+        )
 
     # Load template
     template = load_service_template(service_name)
@@ -461,14 +491,17 @@ async def start_service(service_name: str) -> str:
         if not model_file:
             return "❌ No Whisper model found. Run `voicemode whisper model <name>` first (e.g. `voicemode whisper model large-v2`)."
         
-        # Start whisper-server
+        is_windows = platform.system() == "Windows"
+
+        # Start whisper-server. On native Windows, run the .exe directly; the
+        # packaged start script is Bash-only and belongs to macOS/Linux service managers.
         start_script = Path(config_vars["START_SCRIPT"])
-        if start_script.exists():
+        if not is_windows and start_script.exists():
             # Prefer start script if available
             cmd = [str(start_script)]
         else:
             # Fallback to direct binary execution
-            cmd = [str(whisper_bin), "--host", "0.0.0.0", "--port", str(port),
+            cmd = [str(whisper_bin), "--host", "127.0.0.1", "--port", str(port),
                 "--model", str(model_file),
                 "--inference-path", "/v1/audio/transcriptions",
                 "--convert",
@@ -480,9 +513,28 @@ async def start_service(service_name: str) -> str:
         if not kokoro_dir:
             return "❌ kokoro-fastapi not found. Run `voicemode service install kokoro` first."
         
+        is_windows = platform.system() == "Windows"
+        
         # Use appropriate start script
         if platform.system() == "Darwin":
             start_script = Path(kokoro_dir) / "start-gpu_mac.sh"
+        elif is_windows:
+            # On Windows, check for .ps1 scripts
+            if has_gpu_support():
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-gpu.ps1",
+                    Path(kokoro_dir) / "start-cpu.ps1"
+                ]
+            else:
+                possible_scripts = [
+                    Path(kokoro_dir) / "start-cpu.ps1",
+                    Path(kokoro_dir) / "start-gpu.ps1"
+                ]
+            start_script = None
+            for script in possible_scripts:
+                if script.exists():
+                    start_script = script
+                    break
         else:
             # On Linux, prefer GPU script if GPU is available, otherwise use CPU script
             if has_gpu_support():
@@ -504,10 +556,13 @@ async def start_service(service_name: str) -> str:
                     start_script = script
                     break
         
-        if not start_script.exists():
-            return f"❌ Start script not found: {start_script}"
+        if not start_script or not start_script.exists():
+            return f"❌ Start script not found in {kokoro_dir}"
 
-        cmd = [str(start_script)]
+        if is_windows and start_script.suffix == ".ps1":
+            cmd = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(start_script)]
+        else:
+            cmd = [str(start_script)]
 
     elif service_name == "mlx_audio":
         # mlx-audio installs via ``uv tool install`` -- the entry point
@@ -546,20 +601,52 @@ async def start_service(service_name: str) -> str:
         elif service_name == "mlx_audio":
             cwd = log_dir
 
+        # Setup logging files for direct process execution (critical on Windows to avoid pipe buffer exhaustion and broken pipes)
+        log_dir = Path.home() / ".voicemode" / "logs" / file_name
+        log_dir.mkdir(parents=True, exist_ok=True)
+        out_log_path = log_dir / f"{file_name}.out.log"
+        err_log_path = log_dir / f"{file_name}.err.log"
+
+        out_file = open(out_log_path, "a", encoding="utf-8", errors="ignore")
+        err_file = open(err_log_path, "a", encoding="utf-8", errors="ignore")
+
+        creationflags = 0
+        if platform.system() == "Windows":
+            # 0x01000000 is CREATE_BREAKAWAY_FROM_JOB
+            creationflags = subprocess.DETACHED_PROCESS | 0x01000000
+
         process = subprocess.Popen(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=cwd
+            stdout=out_file,
+            stderr=err_file,
+            cwd=cwd,
+            creationflags=creationflags
         )
 
         # Wait a moment to check if it started
         await asyncio.sleep(2)
 
+        # Flush files to ensure output is written to disk
+        out_file.flush()
+        err_file.flush()
+
         if process.poll() is not None:
             # Process exited
-            stderr = process.stderr.read().decode() if process.stderr else ""
-            return f"❌ {service_name.capitalize()} failed to start: {stderr}"
+            # Read last few lines of error log to report
+            stderr_snippet = ""
+            try:
+                if err_log_path.exists():
+                    with open(err_log_path, "r", encoding="utf-8", errors="ignore") as f:
+                        stderr_snippet = "".join(f.readlines()[-10:])
+            except Exception:
+                pass
+            out_file.close()
+            err_file.close()
+            return f"❌ {service_name.capitalize()} failed to start: {stderr_snippet}"
+
+        # Close python file descriptors (process keeps writing to the OS file handles)
+        out_file.close()
+        err_file.close()
 
         # Verify it's running
         if find_process_by_port(port):
@@ -667,6 +754,13 @@ async def enable_service(service_name: str) -> str:
     """
     system = platform.system()
 
+    if system == "Windows":
+        return (
+            "⚠️ Automatic login startup is not supported on native Windows yet. "
+            "Use `voicemode service start {service_name}` to start it directly, "
+            "or use the Windows startup scripts installed with the service."
+        ).format(service_name=service_name)
+
     try:
         # Create service file using the unified function
         service_path, content = create_service_file(service_name)
@@ -758,6 +852,13 @@ async def disable_service(service_name: str) -> str:
     file_name = "serve" if service_name == "voicemode" else service_name
 
     try:
+        if system == "Windows":
+            return (
+                "⚠️ Automatic login startup is not supported on native Windows yet; "
+                "there is no VoiceMode startup entry to disable. "
+                f"Use `voicemode service stop {service_name}` to stop the running process."
+            )
+
         if system == "Darwin":
             plist_path = Path.home() / "Library" / "LaunchAgents" / f"com.voicemode.{file_name}.plist"
 
@@ -822,50 +923,51 @@ async def view_logs(service_name: str, lines: Optional[int] = None) -> str:
     log_name = "serve" if service_name == "voicemode" else service_name
 
     try:
-        if system == "Darwin":
-            # Use log show command
-            if service_name == "voicemode":
-                process_name = "voicemode-serve"
-            else:
-                process_name = f"{service_name}-server"
-            cmd = [
-                "log", "show",
-                "--predicate", f'process == "{process_name}" OR process == "kokoro-fastapi"',
-                "--last", f"{lines}",
-                "--style", "compact"
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True)
-
-            if result.returncode == 0 and result.stdout.strip():
-                return f"=== Last {lines} log entries for {service_name} ===\n{result.stdout}"
-            else:
-                # Fallback to log files (voicemode logs to serve/ directory)
-                log_dir = Path.home() / ".voicemode" / "logs" / log_name
-                out_log = log_dir / f"{log_name}.out.log"
-                err_log = log_dir / f"{log_name}.err.log"
-
-                logs = []
-                if out_log.exists():
-                    with open(out_log) as f:
-                        stdout_lines = f.readlines()[-lines:]
-                        if stdout_lines:
-                            logs.append(f"=== stdout (last {len(stdout_lines)} lines) ===")
-                            logs.extend(stdout_lines)
-
-                if err_log.exists():
-                    with open(err_log) as f:
-                        stderr_lines = f.readlines()[-lines:]
-                        if stderr_lines:
-                            if logs:
-                                logs.append("")
-                            logs.append(f"=== stderr (last {len(stderr_lines)} lines) ===")
-                            logs.extend(stderr_lines)
-
-                if logs:
-                    return "".join(logs).rstrip()
+        if system == "Darwin" or system == "Windows":
+            # For Darwin, try log show first
+            if system == "Darwin":
+                if service_name == "voicemode":
+                    process_name = "voicemode-serve"
                 else:
-                    return f"No logs found for {service_name}"
+                    process_name = f"{service_name}-server"
+                cmd = [
+                    "log", "show",
+                    "--predicate", f'process == "{process_name}" OR process == "kokoro-fastapi"',
+                    "--last", f"{lines}",
+                    "--style", "compact"
+                ]
+
+                result = subprocess.run(cmd, capture_output=True, text=True)
+
+                if result.returncode == 0 and result.stdout.strip():
+                    return f"=== Last {lines} log entries for {service_name} ===\n{result.stdout}"
+            
+            # Fallback to log files for macOS, or default for Windows
+            log_dir = Path.home() / ".voicemode" / "logs" / log_name
+            out_log = log_dir / f"{log_name}.out.log"
+            err_log = log_dir / f"{log_name}.err.log"
+
+            logs = []
+            if out_log.exists():
+                with open(out_log, encoding="utf-8", errors="ignore") as f:
+                    stdout_lines = f.readlines()[-lines:]
+                    if stdout_lines:
+                        logs.append(f"=== stdout (last {len(stdout_lines)} lines) ===")
+                        logs.extend(stdout_lines)
+
+            if err_log.exists():
+                with open(err_log, encoding="utf-8", errors="ignore") as f:
+                    stderr_lines = f.readlines()[-lines:]
+                    if stderr_lines:
+                        if logs:
+                            logs.append("")
+                        logs.append(f"=== stderr (last {len(stderr_lines)} lines) ===")
+                        logs.extend(stderr_lines)
+
+            if logs:
+                return "".join(logs).rstrip()
+            else:
+                return f"No logs found for {service_name}"
 
         else:  # Linux
             # Use journalctl

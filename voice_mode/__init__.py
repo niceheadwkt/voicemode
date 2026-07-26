@@ -31,23 +31,24 @@ if not hasattr(os, "uname"):
     os.uname = dummy_uname
 
 # Monkeypatch subprocess to always default to UTF-8 when text=True on Windows
-import subprocess
-_orig_run = subprocess.run
-_orig_Popen = subprocess.Popen
+if platform.system() == "Windows":
+    import subprocess
+    _orig_run = subprocess.run
+    _orig_Popen = subprocess.Popen
 
-def _patched_run(*args, **kwargs):
-    if (kwargs.get("text") or kwargs.get("universal_newlines")) and "encoding" not in kwargs:
-        kwargs["encoding"] = "utf-8"
-    return _orig_run(*args, **kwargs)
-
-class _PatchedPopen(_orig_Popen):
-    def __init__(self, *args, **kwargs):
+    def _patched_run(*args, **kwargs):
         if (kwargs.get("text") or kwargs.get("universal_newlines")) and "encoding" not in kwargs:
             kwargs["encoding"] = "utf-8"
-        super().__init__(*args, **kwargs)
+        return _orig_run(*args, **kwargs)
 
-subprocess.run = _patched_run
-subprocess.Popen = _PatchedPopen
+    class _PatchedPopen(_orig_Popen):
+        def __init__(self, *args, **kwargs):
+            if (kwargs.get("text") or kwargs.get("universal_newlines")) and "encoding" not in kwargs:
+                kwargs["encoding"] = "utf-8"
+            super().__init__(*args, **kwargs)
+
+    subprocess.run = _patched_run
+    subprocess.Popen = _PatchedPopen
 
 from .version import __version__
 

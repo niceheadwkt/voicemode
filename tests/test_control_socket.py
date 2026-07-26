@@ -24,6 +24,11 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    not hasattr(socket, "AF_UNIX"),
+    reason="Unix domain sockets (AF_UNIX) not supported on this platform"
+)
+
 from voice_mode import control_socket
 from voice_mode.control_channel import (
     STATE_PAUSED,

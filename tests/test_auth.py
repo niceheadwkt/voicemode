@@ -257,8 +257,10 @@ class TestTokenStorage:
         save_credentials(creds)
 
         # Check file permissions (octal 0o600 = user read/write only)
-        mode = os.stat(creds_file).st_mode & 0o777
-        assert mode == 0o600
+        import sys
+        if sys.platform != "win32":
+            mode = os.stat(creds_file).st_mode & 0o777
+            assert mode == 0o600
 
     def test_save_and_load_credentials(self, temp_credentials_dir):
         """Test round-trip save and load."""

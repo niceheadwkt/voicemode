@@ -31,8 +31,8 @@ def load_dependencies() -> dict:
         # Try importlib.resources first (Python 3.9+)
         from importlib.resources import files
         yaml_path = files("voice_mode") / "dependencies.yaml"
-        with yaml_path.open(encoding="utf-8") as f:
-            return yaml.safe_load(f)
+        yaml_text = yaml_path.read_text(encoding="utf-8")
+        return yaml.safe_load(yaml_text)
     except (ImportError, AttributeError):
         # Fallback to pkg_resources
         try:

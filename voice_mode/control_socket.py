@@ -60,6 +60,8 @@ from voice_mode.history_buffer import HistoryBuffer, get_history_buffer
 
 logger = logging.getLogger("voicemode.control_socket")
 
+HAS_AF_UNIX = hasattr(socket, "AF_UNIX")
+
 # How long accept()/recv() block before re-checking the stop flag. Bounds
 # teardown latency (stop() returns within roughly this long) without
 # busy-spinning the CPU while idle.
@@ -244,6 +246,8 @@ class ControlSocketListener:
         failed control channel should be fatal -- :func:`start_control_listener`
         treats it as non-fatal).
         """
+        if not HAS_AF_UNIX:
+            raise OSError("AF_UNIX sockets are not supported on this platform")
         with self._lifecycle_lock:
             if self.is_running:
                 logger.debug("control listener already running on %s", self._socket_path)
@@ -640,6 +644,8 @@ def send_control_command(
         if socket_path is not None
         else Path(config.CONTROL_SOCKET_PATH)
     )
+    if not HAS_AF_UNIX:
+        raise OSError("AF_UNIX sockets are not supported on this platform")
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
         client.settimeout(timeout)
         client.connect(str(path))
@@ -681,6 +687,8 @@ def query_status(
         else Path(config.CONTROL_SOCKET_PATH)
     )
     buf = b""
+    if not HAS_AF_UNIX:
+        raise OSError("AF_UNIX sockets are not supported on this platform")
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
         client.settimeout(timeout)
         client.connect(str(path))

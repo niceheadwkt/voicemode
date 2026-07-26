@@ -38,7 +38,22 @@ def test_normalise_invokes_ffmpeg_with_expected_arg_vector():
 
     mock_run.assert_called_once()
     args, kwargs = mock_run.call_args
-    assert args[0] == EXPECTED_FFMPEG_ARGS
+    expected_args = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(src),
+        "-ac",
+        "1",
+        "-ar",
+        "24000",
+        "-sample_fmt",
+        "s16",
+        "-af",
+        "loudnorm=I=-16:TP=-1.5:LRA=11",
+        str(dest),
+    ]
+    assert args[0] == expected_args
     assert kwargs.get("capture_output") is True
     assert kwargs.get("text") is True
 

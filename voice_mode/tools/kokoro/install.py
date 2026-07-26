@@ -42,6 +42,19 @@ async def update_kokoro_service_files(
     system = platform.system()
     result = {"success": False, "updated": False}
 
+    if system == "Windows":
+        result.update({
+            "success": True,
+            "updated": False,
+            "start_script": start_script_path,
+            "service_status": "direct_start_only",
+            "message": (
+                "Windows does not use VoiceMode launchd/systemd service files. "
+                "Use `voicemode service start kokoro` to start Kokoro directly."
+            ),
+        })
+        return result
+
     try:
         # Create service file using the unified function
         service_path, content = create_service_file("kokoro")
@@ -55,7 +68,7 @@ async def update_kokoro_service_files(
 
         # Write service file
         service_path.parent.mkdir(parents=True, exist_ok=True)
-        service_path.write_text(content)
+        service_path.write_text(content, encoding="utf-8")
 
         result["success"] = True
         result["updated"] = True
@@ -233,6 +246,8 @@ async def kokoro_install(
                     system = platform.system()
                     if system == "Darwin":
                         start_script_name = "start-gpu_mac.sh"
+                    elif system == "Windows":
+                        start_script_name = "start-cpu.ps1"
                     else:
                         start_script_name = "start-gpu.sh"  # Default to GPU version
                     
@@ -241,14 +256,15 @@ async def kokoro_install(
                     # If a custom port is requested, create custom start script
                     if port != 8880 and os.path.exists(start_script_path):
                         logger.info(f"Creating custom start script for port {port}")
-                        with open(start_script_path, 'r') as f:
+                        with open(start_script_path, 'r', encoding='utf-8') as f:
                             script_content = f.read()
                         modified_script = script_content.replace("--port 8880", f"--port {port}")
-                        custom_script_name = f"start-custom-{port}.sh"
+                        custom_script_name = f"start-custom-{port}{Path(start_script_path).suffix}"
                         custom_script_path = os.path.join(install_dir, custom_script_name)
-                        with open(custom_script_path, 'w') as f:
+                        with open(custom_script_path, 'w', encoding='utf-8') as f:
                             f.write(modified_script)
-                        os.chmod(custom_script_path, 0o755)
+                        if platform.system() != "Windows":
+                            os.chmod(custom_script_path, 0o755)
                         start_script_path = custom_script_path
                     
                     # Always update service files even if kokoro is already installed
@@ -369,18 +385,19 @@ async def kokoro_install(
         # If a custom port is requested, we need to modify the start script
         if port != 8880:
             logger.info(f"Creating custom start script for port {port}")
-            with open(start_script_path, 'r') as f:
+            with open(start_script_path, 'r', encoding='utf-8') as f:
                 script_content = f.read()
             
             # Replace the port in the script
             modified_script = script_content.replace("--port 8880", f"--port {port}")
             
             # Create a custom start script
-            custom_script_name = f"start-custom-{port}.sh"
+            custom_script_name = f"start-custom-{port}{Path(start_script_path).suffix}"
             custom_script_path = os.path.join(install_dir, custom_script_name)
-            with open(custom_script_path, 'w') as f:
+            with open(custom_script_path, 'w', encoding='utf-8') as f:
                 f.write(modified_script)
-            os.chmod(custom_script_path, 0o755)
+            if system != "Windows":
+                os.chmod(custom_script_path, 0o755)
             start_script_path = custom_script_path
             
         current_version = get_current_version(Path(install_dir))

@@ -85,6 +85,12 @@ def voice_mode_main_cli(ctx, debug, tools_enabled, tools_disabled):
 
 def voice_mode() -> None:
     """Entry point for voicemode command - starts the MCP server or runs subcommands."""
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
     voice_mode_main_cli()
 
 

@@ -18,8 +18,13 @@ logger = logging.getLogger("voicemode")
 
 def find_whisper_server() -> Optional[str]:
     """Find the whisper-server binary."""
+    is_windows = platform.system() == "Windows"
+    
     # Check common installation paths
-    paths_to_check = [
+    paths_to_check = []
+    
+    # Base paths with platform-specific variations
+    base_paths = [
         Path.home() / ".voicemode" / "services" / "whisper" / "build" / "bin" / "whisper-server",  # New location
         Path.home() / ".voicemode" / "whisper.cpp" / "build" / "bin" / "whisper-server",  # Legacy location
         Path.home() / ".voicemode" / "whisper.cpp" / "whisper-server",
@@ -28,15 +33,32 @@ def find_whisper_server() -> Optional[str]:
         Path("/opt/homebrew/bin/whisper-server"),
     ]
     
+    if is_windows:
+        # Add Windows-specific paths
+        paths_to_check.append(Path.home() / ".voicemode" / "services" / "whisper" / "Release" / "whisper-server.exe")
+        paths_to_check.append(Path.home() / ".voicemode" / "services" / "whisper" / "Release" / "server.exe")
+        paths_to_check.append(Path.home() / ".voicemode" / "services" / "whisper" / "Release" / "main.exe")
+        
+        # Append .exe to standard base paths
+        for path in base_paths:
+            paths_to_check.append(path.with_suffix(".exe"))
+    
+    paths_to_check.extend(base_paths)
+    
     for path in paths_to_check:
         if path.exists() and path.is_file():
             return str(path)
     
-    # Try to find in PATH
-    result = subprocess.run(["which", "whisper-server"], capture_output=True, text=True)
-    if result.returncode == 0 and result.stdout.strip():
-        return result.stdout.strip()
-    
+    # Try to find in PATH using cross-platform shutil.which
+    found = shutil.which("whisper-server")
+    if found:
+        return found
+        
+    if is_windows:
+        found_server = shutil.which("server") or shutil.which("main")
+        if found_server:
+            return found_server
+            
     return None
 
 

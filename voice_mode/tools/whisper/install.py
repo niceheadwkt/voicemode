@@ -57,11 +57,11 @@ async def update_whisper_service_files(
     source_template = Path(__file__).parent.parent.parent.parent / "templates" / "scripts" / "start-whisper-server.sh"
     if source_template.exists():
         logger.info(f"Loading template from source: {source_template}")
-        template_content = source_template.read_text()
+        template_content = source_template.read_text(encoding="utf-8")
     else:
         try:
             template_resource = files("voice_mode.templates.scripts").joinpath("start-whisper-server.sh")
-            template_content = template_resource.read_text()
+            template_content = template_resource.read_text(encoding="utf-8")
             logger.info("Loaded template from package resources")
         except Exception as e:
             logger.warning(f"Failed to load template script: {e}. Using fallback inline script.")
@@ -151,9 +151,23 @@ exec "$SERVER_BIN" \\
 """
     
     start_script_path = os.path.join(bin_dir, "start-whisper-server.sh")
-    with open(start_script_path, 'w') as f:
+    with open(start_script_path, 'w', encoding='utf-8') as f:
         f.write(template_content)
-    os.chmod(start_script_path, 0o755)
+    if system != "Windows":
+        os.chmod(start_script_path, 0o755)
+
+    if system == "Windows":
+        result.update({
+            "success": True,
+            "updated": False,
+            "start_script": start_script_path,
+            "service_status": "direct_start_only",
+            "message": (
+                "Windows does not use VoiceMode launchd/systemd service files. "
+                "Use `voicemode service start whisper` to start Whisper directly."
+            ),
+        })
+        return result
     
     # Update service files based on platform
     if system == "Darwin":
@@ -172,10 +186,10 @@ exec "$SERVER_BIN" \\
         source_template = Path(__file__).parent.parent.parent.parent / "templates" / "launchd" / "com.voicemode.whisper.plist"
         if source_template.exists():
             logger.info(f"Loading plist template from source: {source_template}")
-            plist_content = source_template.read_text()
+            plist_content = source_template.read_text(encoding="utf-8")
         else:
             template_resource = files("voice_mode.templates.launchd").joinpath("com.voicemode.whisper.plist")
-            plist_content = template_resource.read_text()
+            plist_content = template_resource.read_text(encoding="utf-8")
             logger.info("Loaded plist template from package resources")
         
         # Replace placeholders with expanded paths
@@ -190,7 +204,7 @@ exec "$SERVER_BIN" \\
             pass
         
         # Write updated plist
-        with open(plist_path, 'w') as f:
+        with open(plist_path, 'w', encoding='utf-8') as f:
             f.write(plist_content)
         
         result["success"] = True
@@ -228,11 +242,11 @@ exec "$SERVER_BIN" \\
         source_template = Path(__file__).parent.parent.parent.parent / "templates" / "systemd" / "voicemode-whisper.service"
         if source_template.exists():
             logger.info(f"Loading systemd template from source: {source_template}")
-            service_content = source_template.read_text()
+            service_content = source_template.read_text(encoding="utf-8")
         else:
             try:
                 template_resource = files("voice_mode.templates.systemd").joinpath("voicemode-whisper.service")
-                service_content = template_resource.read_text()
+                service_content = template_resource.read_text(encoding="utf-8")
                 logger.info("Loaded systemd template from package resources")
             except Exception as e:
                 logger.warning(f"Failed to load template: {e}. Using fallback inline template.")
@@ -268,7 +282,7 @@ WantedBy=default.target
         service_content = service_content.replace("{WHISPER_PORT}", str(WHISPER_PORT))
 
         # Write systemd service file
-        with open(service_path, 'w') as f:
+        with open(service_path, 'w', encoding='utf-8') as f:
             f.write(service_content)
         
         # Reload systemd
@@ -769,6 +783,10 @@ async def whisper_install(
         
         else:
             current_version = get_current_version(Path(install_dir))
+            enable_message = (
+                " Automatic startup is not configured on Windows; "
+                "use `voicemode service start whisper`."
+            )
             return {
                 "success": True,
                 "install_path": install_dir,
@@ -781,8 +799,12 @@ async def whisper_install(
                     "system": system,
                     "gpu_acceleration": gpu_type,
                     "model": model,
-                    "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main")
+                    "binary_path": main_path if 'main_path' in locals() else os.path.join(install_dir, "main"),
+                    "server_port": 2022,
+                    "server_url": "http://localhost:2022"
                 },
+                "start_script": start_script_path,
+                "service_status": service_update_result.get("service_status", "direct_start_only"),
                 "message": f"Successfully installed whisper.cpp {current_version} with {gpu_type} support{enable_message}{' (' + migration_msg + ')' if migration_msg else ''}"
             }
         
